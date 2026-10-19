@@ -14,7 +14,7 @@ concurrency:
 jobs:
   coletar:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,7 +23,9 @@ jobs:
       - name: Instalar navegador
         run: pip install playwright==1.47.0 && python -m playwright install --with-deps chromium
       - name: Coletar
+        timeout-minutes: 42
         env:
+          LIMITE_MIN: "35"
           CRITERIOS: ${{ inputs.criterios }}
         run: python coletor/coletar.py
       - name: Publicar resultado no ramo "resultados"
