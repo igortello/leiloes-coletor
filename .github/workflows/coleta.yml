@@ -7,7 +7,10 @@ on:
         required: false
         default: ""
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: coleta
+  cancel-in-progress: false
 jobs:
   coletar:
     runs-on: ubuntu-latest
@@ -21,9 +24,13 @@ jobs:
         env:
           CRITERIOS: ${{ inputs.criterios }}
         run: python coletor/coletar.py
-      - uses: actions/upload-artifact@v4
+      - name: Publicar resultado no ramo "resultados"
         if: always()
-        with:
-          name: resultado
-          path: saida/
-          retention-days: 7
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p /tmp/pub && cp -r saida/. /tmp/pub/ 2>/dev/null || true
+          echo "{\"run_id\": \"$RUN_ID\", \"em\": \"$(date -u +%FT%TZ)\", \"ok\": $( [ -f saida/erro.json ] && echo false || echo true )}" > /tmp/pub/execucao.json
+          cd /tmp/pub && git init -q -b resultados && git add -A
+          git -c user.name="coletor" -c user.email="coletor@users.noreply.github.com" commit -q -m "Resultado da execução $RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" resultados

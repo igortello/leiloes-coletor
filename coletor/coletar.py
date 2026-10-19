@@ -12,6 +12,7 @@ LISTA = "https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_{uf}.csv"
 DETALHE = "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel={num}"
 BRT = timezone(timedelta(hours=-3))
 PAUSA = float(os.environ.get("PAUSA", "0.7"))
+DIAG = {}
 
 
 def norm(s):
@@ -25,9 +26,14 @@ def baixar(url, tentativas=3):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "pt-BR,pt;q=0.9"})
             with urllib.request.urlopen(req, timeout=60) as r:
-                return r.read()
+                data = r.read()
+                DIAG[url[-60:]] = {"status": r.status, "tipo": r.headers.get("Content-Type"), "bytes": len(data),
+                                   "inicio": data[:300].decode("latin-1", "ignore")}
+                return data
         except Exception as e:  # noqa
             erro = e
+            body = getattr(e, "read", lambda: b"")()[:300] if hasattr(e, "read") else b""
+            DIAG[url[-60:]] = {"erro": repr(e), "inicio": body.decode("latin-1", "ignore")}
             time.sleep(2 + 3 * i)
     raise RuntimeError(f"falha ao baixar {url}: {erro}")
 
@@ -208,4 +214,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import traceback
+    os.makedirs("saida", exist_ok=True)
+    try:
+        main()
+    except BaseException as e:  # registra o erro para quem importa o resultado
+        with open("saida/erro.json", "w", encoding="utf-8") as f:
+            json.dump({"em": datetime.now(timezone.utc).isoformat(), "erro": str(e),
+                       "traceback": traceback.format_exc()[-4000:], "diagnostico": DIAG}, f, ensure_ascii=False)
+        raise
