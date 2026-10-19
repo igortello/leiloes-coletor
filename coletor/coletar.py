@@ -264,10 +264,27 @@ def carregar_anterior(hoje):
     return cache
 
 
+ESPERA_JS = """() => { const t = (document.body && document.body.innerText) || "";
+  return /FORMAS DE PAGAMENTO|Valor de avalia|mais dispon[ií]vel para venda|Ocorreu um erro ao tentar recuperar/i.test(t); }"""
+
+
+class Indisponivel(Exception):
+    pass
+
+
+def esperar_conteudo(pg, ms=20000):
+    try:
+        pg.wait_for_function(ESPERA_JS, timeout=ms)
+    except Exception:
+        pass
+
+
 def ler_anuncio(html, hoje):
     if "Radware" in html[:3000]:
         raise RuntimeError("anti-robô")
     t = texto(html)
+    if re.search(r"mais dispon[íi]vel para venda", t, re.I):
+        raise Indisponivel("imóvel não está mais disponível para venda")
     det = detalhe_campos(t, hoje)
     if not det["financiamento"] and not det["regra_condominio"] and not det["financiamento_texto"]:
         raise RuntimeError("anúncio vazio: " + t[:600].replace("\n", " | "))
@@ -343,8 +360,11 @@ def main():
                     for _ in range(4):
                         if "RADWARE" not in pg.title().upper(): break
                         pg.wait_for_timeout(3000)
+                    esperar_conteudo(pg)
                     det = ler_anuncio(pg.content(), hoje)
                     imoveis.append(montar(l, det, hoje)); cont["anuncios_ok"] += 1
+                except Indisponivel:
+                    cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
                 except Exception as e:  # noqa
                     falhou.append(l); FALHAS.append({"numero": l["numero"], "modalidade": l["modalidade"].strip(), "erro": str(e)[:700], "url": pg.url})
                 del pend[pg]
@@ -358,10 +378,12 @@ def main():
                 imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1; continue
             try:
                 nav.page.wait_for_timeout(2500)
-                det = ler_anuncio(nav.abrir(DETALHE.format(num=l["numero"])), hoje)
-                nav.page.wait_for_timeout(1500)
-                det = det if det["financiamento"] or det["regra_condominio"] else ler_anuncio(nav.page.content(), hoje)
+                nav.abrir(DETALHE.format(num=l["numero"]))
+                esperar_conteudo(nav.page, 30000)
+                det = ler_anuncio(nav.page.content(), hoje)
                 imoveis.append(montar(l, det, hoje)); cont["anuncios_ok"] += 1; recuperados += 1
+            except Indisponivel:
+                cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
             except Exception as e:  # noqa
                 FALHAS.append({"numero": l["numero"], "tentativa": 2, "erro": str(e)[:700]})
                 imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1
