@@ -11,7 +11,7 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 LISTA = "https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_{uf}.csv"
 DETALHE = "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel={num}"
 BRT = timezone(timedelta(hours=-3))
-PAUSA = float(os.environ.get("PAUSA", "0.7"))
+PAUSA = float(os.environ.get("PAUSA", "1.0"))
 DIAG = {}
 
 
@@ -53,7 +53,7 @@ def num_br(s):
 COLS = {"numero": ("N DO IMOVEL", "NO DO IMOVEL", "NUMERO DO IMOVEL", "N DO IMOVEL"),
         "uf": ("UF",), "cidade": ("CIDADE",), "bairro": ("BAIRRO",), "endereco": ("ENDERECO",),
         "preco": ("PRECO",), "avaliacao": ("VALOR DE AVALIACAO",), "desconto": ("DESCONTO",),
-        "descricao": ("DESCRICAO",), "modalidade": ("MODALIDADE DE VENDA", "MODALIDADE"), "link": ("LINK DE ACESSO", "LINK")}
+        "descricao": ("DESCRICAO",), "modalidade": ("MODALIDADE DE VENDA", "MODALIDADE"), "financiamento": ("FINANCIAMENTO",), "link": ("LINK DE ACESSO", "LINK")}
 
 
 def ler_lista(raw):
@@ -83,8 +83,56 @@ def ler_lista(raw):
             continue
         out.append({"numero": numero, "uf": g("uf").upper(), "cidade": g("cidade"), "bairro": g("bairro"),
                     "endereco": g("endereco"), "preco": num_br(g("preco")), "avaliacao": num_br(g("avaliacao")),
-                    "desconto": num_br(g("desconto")), "descricao": g("descricao"), "modalidade": g("modalidade")})
+                    "desconto": num_br(g("desconto")), "descricao": g("descricao"), "modalidade": g("modalidade"), "fin_lista": g("financiamento")})
     return out
+
+
+class Navegador:
+    """Chromium real: o site da Caixa bloqueia clientes HTTP comuns (Radware Bot Manager)."""
+    def __enter__(self):
+        from playwright.sync_api import sync_playwright
+        self._p = sync_playwright().start()
+        self.b = self._p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        self.ctx = self.b.new_context(locale="pt-BR", timezone_id="America/Sao_Paulo", viewport={"width": 1366, "height": 768},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
+        self.ctx.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined})")
+        self.page = self.ctx.new_page()
+        return self
+
+    def __exit__(self, *a):
+        try: self.b.close(); self._p.stop()
+        except Exception: pass
+
+    def abrir(self, url, tentativas=2):
+        ultimo = None
+        for i in range(tentativas):
+            try:
+                self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                for _ in range(6):
+                    if "RADWARE" not in self.page.title().upper(): break
+                    self.page.wait_for_timeout(4000)
+                html = self.page.content()
+                DIAG[url[-60:]] = {"titulo": self.page.title(), "bytes": len(html)}
+                if "Radware" in html[:2000]:
+                    raise RuntimeError("bloqueado pelo anti-robô da Caixa")
+                return html
+            except Exception as e:  # noqa
+                ultimo = e; self.page.wait_for_timeout(3000 + 4000 * i)
+        raise RuntimeError(f"falha ao abrir {url}: {ultimo}")
+
+    def baixar_lista(self, uf):
+        self.abrir("https://venda-imoveis.caixa.gov.br/sistema/download-lista.asp")
+        self.page.wait_for_timeout(3000)
+        b64 = self.page.evaluate("""async (u) => { const r = await fetch(u, {credentials:'include'});
+            const b = new Uint8Array(await r.arrayBuffer()); let s=''; const n=0x8000;
+            for (let i=0;i<b.length;i+=n) s += String.fromCharCode.apply(null, b.subarray(i,i+n));
+            return {status:r.status, tipo:r.headers.get('content-type'), b64: btoa(s)}; }""", LISTA.format(uf=uf))
+        import base64
+        data = base64.b64decode(b64["b64"])
+        DIAG["lista_" + uf] = {"status": b64["status"], "tipo": b64["tipo"], "bytes": len(data), "inicio": data[:200].decode("latin-1", "ignore")}
+        if b"Radware" in data[:3000]:
+            raise RuntimeError("a lista da Caixa veio bloqueada pelo anti-robô")
+        return data
 
 
 FRACAO = re.compile(r"FRACAO|PARTE IDEAL|DIREITOS? SOBRE|USUFRUTO|NUA[- ]PROPRIEDADE|\d+(?:[.,]\d+)?\s*%", re.I)
@@ -108,7 +156,11 @@ def desc_campos(d):
 
 
 def texto(html):
-    h = html.decode("latin-1", "ignore") if b"charset=utf-8" not in html[:3000].lower() else html.decode("utf-8", "ignore")
+    if isinstance(html, str):
+        html = html.encode("utf-8"); h = html.decode("utf-8")
+    else:
+        h = None
+    h = h if h is not None else html.decode("latin-1", "ignore") if b"charset=utf-8" not in html[:3000].lower() else html.decode("utf-8", "ignore")
     h = re.sub(r"(?is)<(script|style).*?</\1>", " ", h)
     h = re.sub(r"(?i)<br\s*/?>|</(p|div|li|h\d|span|tr|td|strong|b|label)>", "\n", h)
     h = re.sub(r"<[^>]+>", " ", h)
@@ -157,59 +209,66 @@ def main():
     cidades = {"SP": {norm(c) for c in crit.get("cidades_sp", [])}, "RJ": {norm(c) for c in crit.get("cidades_rj", [])}}
     hoje = datetime.now(BRT).date()
     os.makedirs("saida", exist_ok=True)
-    cont = {"na_lista": 0, "candidatos": 0, "anuncios_ok": 0, "falhas": 0}
+    cont = {"na_lista": 0, "candidatos": 0, "sem_financiamento_lista": 0, "anuncios_ok": 0, "falhas": 0}
     candidatos = []
-    for uf in ("SP", "RJ"):
-        linhas = ler_lista(baixar(LISTA.format(uf=uf)))
-        cont["na_lista"] += len(linhas)
-        for l in linhas:
-            if norm(l["cidade"]) not in cidades[uf]:
-                continue
-            if l["preco"] is None or not (lmin <= l["preco"] <= lmax):
-                continue
-            if FRACAO.search(norm(l["descricao"])):
-                continue
-            candidatos.append(l)
-    cont["candidatos"] = len(candidatos)
-    print(f"{cont['na_lista']} imóveis nas listas; {len(candidatos)} candidatos", flush=True)
-    imoveis = []
-    for i, l in enumerate(candidatos, 1):
-        try:
-            t = texto(baixar(DETALHE.format(num=l["numero"]), tentativas=2))
-            det = detalhe_campos(t, hoje)
-            cont["anuncios_ok"] += 1
-        except Exception as e:  # noqa
-            print("falha", l["numero"], e, flush=True)
-            cont["falhas"] += 1
+    with Navegador() as nav:
+        for uf in ("SP", "RJ"):
+            linhas = ler_lista(nav.baixar_lista(uf))
+            cont["na_lista"] += len(linhas)
+            for l in linhas:
+                if norm(l["cidade"]) not in cidades[uf]:
+                    continue
+                if l["preco"] is None or not (lmin <= l["preco"] <= lmax):
+                    continue
+                if FRACAO.search(norm(l["descricao"])):
+                    continue
+                candidatos.append(l)
+        cont["candidatos"] = len(candidatos)
+        print(f"{cont['na_lista']} imóveis nas listas; {len(candidatos)} candidatos", flush=True)
+        imoveis = []
+        for i, l in enumerate(candidatos, 1):
+            fin_lista = norm(l.get("fin_lista"))
+            dc = desc_campos(l["descricao"])
+            d = {"banco": "Caixa", "numero_bem": l["numero"], "uf": l["uf"], "cidade": l["cidade"], "bairro": l["bairro"],
+                 "endereco": l["endereco"], "empreendimento": None, **dc,
+                 "lance_minimo": l["preco"], "avaliacao": l["avaliacao"],
+                 "desconto_pct": round(l["desconto"] / 100, 4) if l["desconto"] is not None else None,
+                 "modalidade": l["modalidade"], "descricao": l["descricao"], "financiamento_lista": l.get("fin_lista"),
+                 "link": DETALHE.format(num=l["numero"])}
             det = None
-        time.sleep(PAUSA)
-        dc = desc_campos(l["descricao"])
-        d = {"banco": "Caixa", "numero_bem": l["numero"], "uf": l["uf"], "cidade": l["cidade"], "bairro": l["bairro"],
-             "endereco": l["endereco"], "empreendimento": None, **dc,
-             "lance_minimo": l["preco"], "avaliacao": l["avaliacao"],
-             "desconto_pct": round(l["desconto"] / 100, 4) if l["desconto"] is not None else None,
-             "modalidade": l["modalidade"], "descricao": l["descricao"],
-             "link": DETALHE.format(num=l["numero"])}
-        if det:
-            d.update(det)
-        al = []
-        if det is None: al.append("Anúncio não lido")
-        if d.get("ocupacao") is None: al.append("Ocupação não informada")
-        elif d.get("ocupacao") == "Ocupado": al.append("Ocupado")
-        if d.get("vaga") is None: al.append("Vaga não informada")
-        av = norm(d.get("averbacao_leiloes"))
-        if av and "AVERBADO" not in av.split(): al.append("Leilões negativos " + (d.get("averbacao_leiloes") or "").lower())
-        if det and d.get("data_leilao") is None: al.append("Sem data (venda direta)")
-        d["alertas"] = al
-        imoveis.append(d)
-        if i % 25 == 0:
-            print(f"{i}/{len(candidatos)} anúncios", flush=True)
+            if fin_lista.startswith("NAO"):
+                cont["sem_financiamento_lista"] += 1
+                d.update({"financiamento": False, "financiamento_texto": None})
+            else:
+                try:
+                    det = detalhe_campos(texto(nav.abrir(DETALHE.format(num=l["numero"]))), hoje)
+                    cont["anuncios_ok"] += 1
+                    d.update(det)
+                except Exception as e:  # noqa
+                    print("falha", l["numero"], e, flush=True)
+                    cont["falhas"] += 1
+                    if fin_lista.startswith("SIM"):
+                        d.update({"financiamento": True, "financiamento_texto": "Lista da Caixa: financiamento " + l.get("fin_lista")})
+                time.sleep(PAUSA)
+            al = []
+            if not fin_lista.startswith("NAO") and det is None: al.append("Anúncio não lido")
+            if d.get("ocupacao") is None: al.append("Ocupação não informada")
+            elif d.get("ocupacao") == "Ocupado": al.append("Ocupado")
+            if d.get("vaga") is None: al.append("Vaga não informada")
+            av = norm(d.get("averbacao_leiloes"))
+            if av and "AVERBADO" not in av.split(): al.append("Leilões negativos " + (d.get("averbacao_leiloes") or "").lower())
+            if det and d.get("data_leilao") is None: al.append("Sem data (venda direta)")
+            d["alertas"] = al
+            imoveis.append(d)
+            if i % 25 == 0:
+                print(f"{i}/{len(candidatos)}", flush=True)
     res = {"gerado_em": datetime.now(timezone.utc).isoformat(), "hoje_brt": hoje.isoformat(), "criterios": crit,
            "contagens": cont, "imoveis": imoveis}
     with open("saida/resultado.json", "w", encoding="utf-8") as f:
         json.dump(res, f, ensure_ascii=False)
     print(json.dumps(cont), flush=True)
-    if cont["candidatos"] and cont["anuncios_ok"] == 0:
+    precisam = cont["candidatos"] - cont["sem_financiamento_lista"]
+    if precisam and cont["anuncios_ok"] == 0:
         sys.exit("nenhum anúncio pôde ser lido — o site da Caixa pode estar bloqueando")
 
 
