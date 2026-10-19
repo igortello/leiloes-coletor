@@ -287,7 +287,7 @@ def ler_anuncio(html, hoje):
         raise Indisponivel("imóvel não está mais disponível para venda")
     det = detalhe_campos(t, hoje)
     if not det["financiamento"] and not det["regra_condominio"] and not det["financiamento_texto"]:
-        raise RuntimeError("anúncio vazio: " + t[:600].replace("\n", " | "))
+        raise RuntimeError("anúncio vazio: ..." + t[-900:].replace("\n", " | "))
     return det
 
 
@@ -373,6 +373,8 @@ def main():
                 print(f"{len(imoveis)}/{len(candidatos)} em {int(time.time()-t0)}s", flush=True)
         # segunda tentativa, uma por vez e com calma
         cont["segunda_tentativa"] = len(falhou); recuperados = 0
+        if falhou:  # página completa (sem bloquear estilos/imagens) para os casos difíceis
+            nav.ctx.unroute("**/*")
         for l in falhou:
             if time.time() - t0 > LIMITE_S:
                 imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1; continue
@@ -390,7 +392,7 @@ def main():
         cont["recuperados_2a_tentativa"] = recuperados
     gravar(crit, hoje, cont, imoveis, cont["nao_lidos_por_tempo"] > 0)
     print(json.dumps(cont), flush=True)
-    if len(abrir) > 5 and cont["anuncios_ok"] == 0:
+    if cont["anuncios_ok"] == 0 and cont["falhas"] >= 10:
         sys.exit("nenhum anúncio pôde ser lido — o site da Caixa pode estar bloqueando")
 
 
