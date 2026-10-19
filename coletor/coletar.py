@@ -205,7 +205,8 @@ def detalhe_campos(t, hoje):
 
 
 LIMITE_S = float(os.environ.get("LIMITE_MIN", "33")) * 60
-PARALELO = int(os.environ.get("PARALELO", "4"))
+PARALELO = int(os.environ.get("PARALELO", "3"))
+FALHAS = []
 
 
 def montar(l, det, hoje):
@@ -254,6 +255,8 @@ def carregar_anterior(hoje):
     for d in ant.get("imoveis", []):
         if "Anúncio não lido" in (d.get("alertas") or []) or not d.get("_assinatura"):
             continue
+        if not d.get("financiamento_texto") and not d.get("regra_condominio"):
+            continue
         dl = d.get("data_leilao")
         if dl and dl < hoje.isoformat():   # praça já passou: reabrir para pegar a nova data
             continue
@@ -261,8 +264,18 @@ def carregar_anterior(hoje):
     return cache
 
 
+def ler_anuncio(html, hoje):
+    if "Radware" in html[:3000]:
+        raise RuntimeError("anti-robô")
+    t = texto(html)
+    det = detalhe_campos(t, hoje)
+    if not det["financiamento"] and not det["regra_condominio"] and not det["financiamento_texto"]:
+        raise RuntimeError("anúncio vazio: " + t[:600].replace("\n", " | "))
+    return det
+
+
 def gravar(crit, hoje, cont, imoveis, parcial):
-    res = {"gerado_em": datetime.now(timezone.utc).isoformat(), "hoje_brt": hoje.isoformat(), "criterios": crit,
+    res = {"diagnostico_falhas": FALHAS[:15], "gerado_em": datetime.now(timezone.utc).isoformat(), "hoje_brt": hoje.isoformat(), "criterios": crit,
            "parcial": parcial, "contagens": cont, "imoveis": imoveis}
     tmp = "saida/resultado.json.tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -307,7 +320,7 @@ def main():
         imoveis += [montar(l, {k: cache[l["numero"]].get(k) for k in CAMPOS_ANUNCIO}, hoje) for l in reaproveitar]
         # páginas extras no mesmo contexto (cookies do anti-robô já resolvidos)
         pages = [nav.page] + [nav.ctx.new_page() for _ in range(PARALELO - 1)]
-        fila = list(abrir); pend = {}
+        fila = list(abrir); pend = {}; falhou = []
         while fila or pend:
             if time.time() - t0 > LIMITE_S:
                 cont["nao_lidos_por_tempo"] = len(fila) + len(pend)
@@ -322,7 +335,7 @@ def main():
                         pg.goto(DETALHE.format(num=l["numero"]), wait_until="commit", timeout=60000)
                         pend[pg] = l
                     except Exception as e:  # noqa
-                        cont["falhas"] += 1; imoveis.append(montar(l, None, hoje))
+                        falhou.append(l); FALHAS.append({"numero": l["numero"], "erro": "goto: " + str(e)[:300]})
             time.sleep(PAUSA)
             for pg, l in list(pend.items()):
                 try:
@@ -330,16 +343,29 @@ def main():
                     for _ in range(4):
                         if "RADWARE" not in pg.title().upper(): break
                         pg.wait_for_timeout(3000)
-                    html = pg.content()
-                    if "Radware" in html[:2000]:
-                        raise RuntimeError("anti-robô")
-                    imoveis.append(montar(l, detalhe_campos(texto(html), hoje), hoje)); cont["anuncios_ok"] += 1
+                    det = ler_anuncio(pg.content(), hoje)
+                    imoveis.append(montar(l, det, hoje)); cont["anuncios_ok"] += 1
                 except Exception as e:  # noqa
-                    cont["falhas"] += 1; imoveis.append(montar(l, None, hoje))
+                    falhou.append(l); FALHAS.append({"numero": l["numero"], "modalidade": l["modalidade"].strip(), "erro": str(e)[:700], "url": pg.url})
                 del pend[pg]
             if len(imoveis) % 40 < PARALELO:
                 gravar(crit, hoje, cont, imoveis, True)
                 print(f"{len(imoveis)}/{len(candidatos)} em {int(time.time()-t0)}s", flush=True)
+        # segunda tentativa, uma por vez e com calma
+        cont["segunda_tentativa"] = len(falhou); recuperados = 0
+        for l in falhou:
+            if time.time() - t0 > LIMITE_S:
+                imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1; continue
+            try:
+                nav.page.wait_for_timeout(2500)
+                det = ler_anuncio(nav.abrir(DETALHE.format(num=l["numero"])), hoje)
+                nav.page.wait_for_timeout(1500)
+                det = det if det["financiamento"] or det["regra_condominio"] else ler_anuncio(nav.page.content(), hoje)
+                imoveis.append(montar(l, det, hoje)); cont["anuncios_ok"] += 1; recuperados += 1
+            except Exception as e:  # noqa
+                FALHAS.append({"numero": l["numero"], "tentativa": 2, "erro": str(e)[:700]})
+                imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1
+        cont["recuperados_2a_tentativa"] = recuperados
     gravar(crit, hoje, cont, imoveis, cont["nao_lidos_por_tempo"] > 0)
     print(json.dumps(cont), flush=True)
     if len(abrir) > 5 and cont["anuncios_ok"] == 0:
