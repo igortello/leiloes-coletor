@@ -1,0 +1,29 @@
+name: Coleta Caixa
+on:
+  workflow_dispatch:
+    inputs:
+      criterios:
+        description: "Critérios do portal (JSON)"
+        required: false
+        default: ""
+permissions:
+  contents: read
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Coletar
+        env:
+          CRITERIOS: ${{ inputs.criterios }}
+        run: python coletor/coletar.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultado
+          path: saida/
+          retention-days: 7
