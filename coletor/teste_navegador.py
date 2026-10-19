@@ -4,7 +4,7 @@ OUT = {}
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        ctx = await b.new_context(locale="pt-BR", timezone_id="America/Sao_Paulo",
+        ctx = await b.new_context(accept_downloads=True, locale="pt-BR", timezone_id="America/Sao_Paulo",
               user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
               viewport={"width":1366,"height":768})
         await ctx.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined})")
@@ -22,6 +22,28 @@ async def main():
                              "tem_financiamento": "financiamento" in html.lower(), "inicio": html[:400]}
             except Exception as e:
                 OUT[nome] = {"erro": repr(e)}
+        await page.goto("https://venda-imoveis.caixa.gov.br/sistema/download-lista.asp", wait_until="domcontentloaded")
+        await page.wait_for_timeout(4000)
+        try:
+            js = """async (u) => { const r = await fetch(u, {credentials:'include'}); const b = new Uint8Array(await r.arrayBuffer());
+                    let s=''; for (let i=0;i<Math.min(b.length,400);i++) s+=String.fromCharCode(b[i]); return {status:r.status, tipo:r.headers.get('content-type'), bytes:b.length, inicio:s}; }"""
+            OUT["csv_fetch_pagina"] = await page.evaluate(js, "https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_SP.csv")
+        except Exception as e:
+            OUT["csv_fetch_pagina"] = {"erro": repr(e)}
+        try:
+            async with page.expect_download(timeout=60000) as dl:
+                await page.evaluate("u => { const a=document.createElement('a'); a.href=u; a.download=''; document.body.appendChild(a); a.click(); }", "https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_RJ.csv")
+            d = await dl.value
+            path = await d.path(); data = open(path,'rb').read()
+            OUT["csv_download_clique"] = {"bytes": len(data), "inicio": data[:300].decode("latin-1","ignore")}
+        except Exception as e:
+            OUT["csv_download_clique"] = {"erro": repr(e)}
+        try:
+            html = await page.content()
+            import re
+            OUT["form_download"] = re.findall(r"<(?:form|select|option|input|button)[^>]{0,200}>", html)[:40]
+        except Exception as e:
+            OUT["form_download"] = repr(e)
         try:
             r = await ctx.request.get("https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_SP.csv", timeout=60000)
             body = await r.body()
