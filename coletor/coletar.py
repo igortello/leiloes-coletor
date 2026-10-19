@@ -96,6 +96,7 @@ class Navegador:
         self.ctx = self.b.new_context(locale="pt-BR", timezone_id="America/Sao_Paulo", viewport={"width": 1366, "height": 768},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
         self.ctx.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined})")
+        self.ctx.route("**/*", lambda r: r.abort() if r.request.resource_type in ("image", "media", "font", "stylesheet") else r.continue_())
         self.page = self.ctx.new_page()
         return self
 
@@ -216,6 +217,7 @@ def montar(l, det, hoje):
          "desconto_pct": round(l["desconto"] / 100, 4) if l["desconto"] is not None else None,
          "modalidade": l["modalidade"], "descricao": l["descricao"], "financiamento_lista": l.get("fin_lista"),
          "link": DETALHE.format(num=l["numero"])}
+    d["_assinatura"] = assinatura(l)
     if fin_lista.startswith("NAO"):
         d.update({"financiamento": False, "financiamento_texto": None})
     elif det:
@@ -234,6 +236,31 @@ def montar(l, det, hoje):
     return d
 
 
+CAMPOS_ANUNCIO = ("financiamento", "financiamento_texto", "fgts", "data_leilao", "hora_leilao", "licitacao", "lote", "leiloeiro",
+                  "matricula", "oficio", "regra_condominio", "regra_tributos", "averbacao_leiloes", "ocupacao")
+
+
+def assinatura(l):
+    return f"{l.get('preco')}|{norm(l.get('modalidade'))}|{norm(l.get('fin_lista'))}"
+
+
+def carregar_anterior(hoje):
+    """Anúncios já lidos na coleta anterior (ramo resultados), reaproveitáveis se nada mudou na lista."""
+    try:
+        ant = json.load(open("anterior.json", encoding="utf-8"))
+    except Exception:
+        return {}
+    cache = {}
+    for d in ant.get("imoveis", []):
+        if "Anúncio não lido" in (d.get("alertas") or []) or not d.get("_assinatura"):
+            continue
+        dl = d.get("data_leilao")
+        if dl and dl < hoje.isoformat():   # praça já passou: reabrir para pegar a nova data
+            continue
+        cache[d["numero_bem"]] = d
+    return cache
+
+
 def gravar(crit, hoje, cont, imoveis, parcial):
     res = {"gerado_em": datetime.now(timezone.utc).isoformat(), "hoje_brt": hoje.isoformat(), "criterios": crit,
            "parcial": parcial, "contagens": cont, "imoveis": imoveis}
@@ -250,7 +277,9 @@ def main():
     cidades = {"SP": {norm(c) for c in crit.get("cidades_sp", [])}, "RJ": {norm(c) for c in crit.get("cidades_rj", [])}}
     hoje = datetime.now(BRT).date()
     os.makedirs("saida", exist_ok=True)
-    cont = {"na_lista": 0, "candidatos": 0, "sem_financiamento_lista": 0, "anuncios_ok": 0, "falhas": 0, "nao_lidos_por_tempo": 0}
+    cont = {"na_lista": 0, "candidatos": 0, "sem_financiamento_lista": 0, "reaproveitados": 0, "anuncios_ok": 0, "falhas": 0, "nao_lidos_por_tempo": 0}
+    so_apto = crit.get("somente_apartamentos", True)
+    cache = carregar_anterior(hoje)
     candidatos = []
     with Navegador() as nav:
         for uf in ("SP", "RJ"):
@@ -263,13 +292,19 @@ def main():
                     continue
                 if FRACAO.search(norm(l["descricao"])):
                     continue
+                if so_apto and not norm(l["descricao"]).startswith("APARTAMENTO"):
+                    continue
                 candidatos.append(l)
         cont["candidatos"] = len(candidatos)
         sem_fin = [l for l in candidatos if norm(l.get("fin_lista")).startswith("NAO")]
-        abrir = [l for l in candidatos if not norm(l.get("fin_lista")).startswith("NAO")]
+        com_fin = [l for l in candidatos if not norm(l.get("fin_lista")).startswith("NAO")]
+        reaproveitar = [l for l in com_fin if l["numero"] in cache and cache[l["numero"]].get("_assinatura") == assinatura(l)]
+        abrir = [l for l in com_fin if l not in reaproveitar]
         cont["sem_financiamento_lista"] = len(sem_fin)
-        print(f"{cont['na_lista']} na lista; {len(candidatos)} candidatos; {len(abrir)} anúncios a abrir", flush=True)
+        cont["reaproveitados"] = len(reaproveitar)
+        print(f"{cont['na_lista']} na lista; {len(candidatos)} candidatos; {len(reaproveitar)} reaproveitados; {len(abrir)} anúncios a abrir", flush=True)
         imoveis = [montar(l, None, hoje) for l in sem_fin]
+        imoveis += [montar(l, {k: cache[l["numero"]].get(k) for k in CAMPOS_ANUNCIO}, hoje) for l in reaproveitar]
         # páginas extras no mesmo contexto (cookies do anti-robô já resolvidos)
         pages = [nav.page] + [nav.ctx.new_page() for _ in range(PARALELO - 1)]
         fila = list(abrir); pend = {}
@@ -307,7 +342,7 @@ def main():
                 print(f"{len(imoveis)}/{len(candidatos)} em {int(time.time()-t0)}s", flush=True)
     gravar(crit, hoje, cont, imoveis, cont["nao_lidos_por_tempo"] > 0)
     print(json.dumps(cont), flush=True)
-    if abrir and cont["anuncios_ok"] == 0:
+    if len(abrir) > 5 and cont["anuncios_ok"] == 0:
         sys.exit("nenhum anúncio pôde ser lido — o site da Caixa pode estar bloqueando")
 
 
