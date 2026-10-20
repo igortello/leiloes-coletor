@@ -187,7 +187,13 @@ def detalhe_campos(t, hoje):
     futuras = sorted([x for x in datas if x[0] >= hoje], key=lambda x: x[0])
     escolhida = futuras[0] if futuras else None
     ocup = achar(r"\b(Desocupado|Ocupado)\b", t)
+    # Leilão SFI: o anúncio traz o valor e a data de cada praça; no 2º leilão o mínimo é menor.
+    v1 = num_br(achar(r"Valor m[íi]nimo de venda 1\s*[º°o]?\s*Leil[ãa]o:\s*R\$\s*([\d.,]+)", t))
+    v2 = num_br(achar(r"Valor m[íi]nimo de venda 2\s*[º°o]?\s*Leil[ãa]o:\s*R\$\s*([\d.,]+)", t))
+    d2 = next((x for x in datas if re.match(r"\s*2", x[2] or "")), None)
     return {
+        "lance_1_leilao": v1, "lance_2_leilao": v2,
+        "data_2_leilao": d2[0].isoformat() if d2 else None, "hora_2_leilao": d2[1] if d2 else None,
         "financiamento": bool(fin), "financiamento_texto": fin,
         "fgts": bool(re.search(r"Permite utiliza[çc][ãa]o de FGTS", t, re.I)),
         "data_leilao": escolhida[0].isoformat() if escolhida else None,
@@ -233,12 +239,32 @@ def montar(l, det, hoje):
     av = norm(d.get("averbacao_leiloes"))
     if av and "AVERBADO" not in av.split(): al.append("Leilões negativos " + (d.get("averbacao_leiloes") or "").lower())
     if det and d.get("data_leilao") is None: al.append("Sem data (venda direta)")
+    if d.get("lance_2_leilao"):
+        al.append("2º leilão" + (" em " + datetime.strptime(d["data_2_leilao"], "%Y-%m-%d").strftime("%d/%m") if d.get("data_2_leilao") else "")
+                  + ": R$ " + f"{d['lance_2_leilao']:,.0f}".replace(",", "."))
     d["alertas"] = al
     return d
 
 
 CAMPOS_ANUNCIO = ("financiamento", "financiamento_texto", "fgts", "data_leilao", "hora_leilao", "licitacao", "lote", "leiloeiro",
-                  "matricula", "oficio", "regra_condominio", "regra_tributos", "averbacao_leiloes", "ocupacao")
+                  "matricula", "oficio", "regra_condominio", "regra_tributos", "averbacao_leiloes", "ocupacao",
+                  "lance_1_leilao", "lance_2_leilao", "data_2_leilao", "hora_2_leilao")
+
+
+def eh_leilao(l):
+    """Leilão SFI (alienação fiduciária): duas praças; a lista da Caixa mostra o valor da 1ª."""
+    m = norm(l.get("modalidade"))
+    return "LEILAO" in m and "LICITACAO" not in m
+
+
+# no 2º leilão SFI o mínimo pode cair até ~50% da avaliação (a Caixa tem usado 60% do 1º)
+FATOR_2_LEILAO_MIN = 0.5
+
+
+def na_faixa_apos_anuncio(l, det, lmin, lmax):
+    """Mantém o imóvel se o valor de alguma praça (1º ou 2º leilão) estiver na faixa de lance."""
+    valores = [l.get("preco")] + ([det.get("lance_2_leilao")] if det else [])
+    return any(v is not None and lmin <= v <= lmax for v in valores)
 
 
 def assinatura(l):
@@ -259,6 +285,8 @@ def carregar_anterior(hoje):
             continue
         dl = d.get("data_leilao")
         if dl and dl < hoje.isoformat():   # praça já passou: reabrir para pegar a nova data
+            continue
+        if eh_leilao(d) and "lance_2_leilao" not in d:   # coleta antiga, sem o 2º leilão: reabrir
             continue
         cache[d["numero_bem"]] = d
     return cache
@@ -307,7 +335,8 @@ def main():
     cidades = {"SP": {norm(c) for c in crit.get("cidades_sp", [])}, "RJ": {norm(c) for c in crit.get("cidades_rj", [])}}
     hoje = datetime.now(BRT).date()
     os.makedirs("saida", exist_ok=True)
-    cont = {"na_lista": 0, "candidatos": 0, "sem_financiamento_lista": 0, "reaproveitados": 0, "anuncios_ok": 0, "falhas": 0, "nao_lidos_por_tempo": 0}
+    cont = {"na_lista": 0, "candidatos": 0, "sem_financiamento_lista": 0, "reaproveitados": 0, "anuncios_ok": 0, "falhas": 0, "nao_lidos_por_tempo": 0,
+            "sfi_2_leilao_avaliados": 0, "sfi_2_leilao_fora_da_faixa": 0}
     so_apto = crit.get("somente_apartamentos", True)
     cache = carregar_anterior(hoje)
     candidatos = []
@@ -318,8 +347,15 @@ def main():
             for l in linhas:
                 if norm(l["cidade"]) not in cidades[uf]:
                     continue
-                if l["preco"] is None or not (lmin <= l["preco"] <= lmax):
+                if l["preco"] is None:
                     continue
+                if not (lmin <= l["preco"] <= lmax):
+                    # Leilão SFI acima do teto na 1ª praça pode entrar na faixa no 2º leilão: abrir o anúncio para ver.
+                    extra = (eh_leilao(l) and l["preco"] > lmax and l["preco"] * FATOR_2_LEILAO_MIN <= lmax
+                             and not norm(l.get("fin_lista")).startswith("NAO"))
+                    if not extra:
+                        continue
+                    l["_so_2_leilao"] = True
                 if FRACAO.search(norm(l["descricao"])):
                     continue
                 if so_apto and not norm(l["descricao"]).startswith("APARTAMENTO"):
@@ -334,7 +370,15 @@ def main():
         cont["reaproveitados"] = len(reaproveitar)
         print(f"{cont['na_lista']} na lista; {len(candidatos)} candidatos; {len(reaproveitar)} reaproveitados; {len(abrir)} anúncios a abrir", flush=True)
         imoveis = [montar(l, None, hoje) for l in sem_fin]
-        imoveis += [montar(l, {k: cache[l["numero"]].get(k) for k in CAMPOS_ANUNCIO}, hoje) for l in reaproveitar]
+        cont["sfi_2_leilao_avaliados"] = sum(1 for l in candidatos if l.get("_so_2_leilao"))
+        def guardar(l, det):
+            """Grava o imóvel, exceto o SFI que só estaria na faixa no 2º leilão e não está."""
+            if l.get("_so_2_leilao") and det is not None and not na_faixa_apos_anuncio(l, det, lmin, lmax):
+                cont["sfi_2_leilao_fora_da_faixa"] += 1
+                return
+            imoveis.append(montar(l, det, hoje))
+        for l in reaproveitar:
+            guardar(l, {k: cache[l["numero"]].get(k) for k in CAMPOS_ANUNCIO})
         # páginas extras no mesmo contexto (cookies do anti-robô já resolvidos)
         pages = [nav.page] + [nav.ctx.new_page() for _ in range(PARALELO - 1)]
         fila = list(abrir); pend = {}; falhou = []
@@ -362,7 +406,7 @@ def main():
                         pg.wait_for_timeout(3000)
                     esperar_conteudo(pg)
                     det = ler_anuncio(pg.content(), hoje)
-                    imoveis.append(montar(l, det, hoje)); cont["anuncios_ok"] += 1
+                    guardar(l, det); cont["anuncios_ok"] += 1
                 except Indisponivel:
                     cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
                 except Exception as e:  # noqa
@@ -383,7 +427,7 @@ def main():
                 nav.abrir(DETALHE.format(num=l["numero"]))
                 esperar_conteudo(nav.page, 30000)
                 det = ler_anuncio(nav.page.content(), hoje)
-                imoveis.append(montar(l, det, hoje)); cont["anuncios_ok"] += 1; recuperados += 1
+                guardar(l, det); cont["anuncios_ok"] += 1; recuperados += 1
             except Indisponivel:
                 cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
             except Exception as e:  # noqa
