@@ -15,7 +15,7 @@ def resposta(r):
         return
     item = {"url": req.url, "metodo": req.method, "post": (req.post_data or "")[:3000], "status": r.status,
             "tipo": r.headers.get("content-type", "")}
-    if "json" in item["tipo"]:
+    if "json" in item["tipo"] or "portalzuk.com.br" in req.url.split("/")[2]:
         try:
             n[0] += 1
             nome = f"{OUT}/resp_{n[0]:03d}.json"
@@ -37,6 +37,11 @@ with sync_playwright() as p:
             pg.wait_for_timeout(4000)
             for _ in range(3):  # rola para disparar carregamento sob demanda
                 pg.mouse.wheel(0, 4000); pg.wait_for_timeout(1500)
+            for _ in range(int(os.environ.get("CLIQUES", "2"))):  # botão "Carregar mais" (Zuk)
+                bt = pg.locator("#btn_carregarMais")
+                if not bt.count() or not bt.is_visible():
+                    break
+                bt.click(); pg.wait_for_timeout(3500)
         except Exception as e:  # noqa
             print("erro", u, e)
         open(f"{OUT}/{i:02d}.html", "w", encoding="utf-8").write(f"<!-- {u} -->\n" + pg.content())
