@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 OUT = "amostras"
 os.makedirs(OUT, exist_ok=True)
-URLS = sys.argv[1:]
+URLS = sys.argv[1:] or os.environ.get("URLS", "").split()
 rede, n = [], [0]
 
 
@@ -32,6 +32,14 @@ with sync_playwright() as p:
     pg = ctx.new_page()
     pg.on("response", resposta)
     for i, u in enumerate(URLS):
+        if u.startswith("json:"):  # GET de API pública a partir da página aberta (mesmo contexto do site)
+            try:
+                txt = pg.evaluate("async (u) => { const r = await fetch(u); return r.status + '\\n' + await r.text(); }", u[5:])
+            except Exception as e:  # noqa
+                txt = "erro " + str(e)
+            open(f"{OUT}/{i:02d}.json.txt", "w", encoding="utf-8").write(u[5:] + "\n" + txt)
+            time.sleep(1.5)
+            continue
         try:
             pg.goto(u, wait_until="networkidle", timeout=90000)
             pg.wait_for_timeout(4000)

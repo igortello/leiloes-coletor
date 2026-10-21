@@ -17,7 +17,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install playwright==1.47.0 && python -m playwright install --with-deps chromium
-      - run: python coletor/amostra.py ${{ inputs.urls }}
+      - run: python coletor/amostra.py
+        env:
+          URLS: ${{ inputs.urls }}
       - name: Publicar no ramo "amostras"
         if: always()
         run: |
