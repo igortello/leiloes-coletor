@@ -1,4 +1,4 @@
-"""Coletor do Portal de Leilões — imóveis Caixa (SP/RJ).
+"""Coletor do Portal de Leilões — imóveis Caixa e Santander/SOLD (SP/RJ).
 
 Baixa as listas oficiais da Caixa, aplica os critérios do portal, abre o
 anúncio de cada candidato e grava saida/resultado.json.
@@ -213,6 +213,8 @@ def detalhe_campos(t, hoje):
 LIMITE_S = float(os.environ.get("LIMITE_MIN", "33")) * 60
 PARALELO = int(os.environ.get("PARALELO", "3"))
 FALHAS = []
+FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa,santander").split(",") if f.strip()}
+FONTES_RES = {}
 
 
 def montar(l, det, hoje):
@@ -321,7 +323,7 @@ def ler_anuncio(html, hoje):
 
 def gravar(crit, hoje, cont, imoveis, parcial):
     res = {"diagnostico_falhas": FALHAS[:15], "gerado_em": datetime.now(timezone.utc).isoformat(), "hoje_brt": hoje.isoformat(), "criterios": crit,
-           "parcial": parcial, "contagens": cont, "imoveis": imoveis}
+           "parcial": parcial, "contagens": cont, "fontes": {"lidas": sorted(FONTES), **FONTES_RES}, "imoveis": imoveis}
     tmp = "saida/resultado.json.tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(res, f, ensure_ascii=False)
@@ -340,103 +342,117 @@ def main():
     so_apto = crit.get("somente_apartamentos", True)
     cache = carregar_anterior(hoje)
     candidatos = []
-    with Navegador() as nav:
-        for uf in ("SP", "RJ"):
-            linhas = ler_lista(nav.baixar_lista(uf))
-            cont["na_lista"] += len(linhas)
-            for l in linhas:
-                if norm(l["cidade"]) not in cidades[uf]:
-                    continue
-                if l["preco"] is None:
-                    continue
-                if not (lmin <= l["preco"] <= lmax):
-                    # Leilão SFI acima do teto na 1ª praça pode entrar na faixa no 2º leilão: abrir o anúncio para ver.
-                    extra = (eh_leilao(l) and l["preco"] > lmax and l["preco"] * FATOR_2_LEILAO_MIN <= lmax
-                             and not norm(l.get("fin_lista")).startswith("NAO"))
-                    if not extra:
+    imoveis = []
+    cont["nao_lidos_por_tempo"] = 0
+    if "caixa" in FONTES:
+        with Navegador() as nav:
+            for uf in ("SP", "RJ"):
+                linhas = ler_lista(nav.baixar_lista(uf))
+                cont["na_lista"] += len(linhas)
+                for l in linhas:
+                    if norm(l["cidade"]) not in cidades[uf]:
                         continue
-                    l["_so_2_leilao"] = True
-                if FRACAO.search(norm(l["descricao"])):
-                    continue
-                if so_apto and not norm(l["descricao"]).startswith("APARTAMENTO"):
-                    continue
-                candidatos.append(l)
-        cont["candidatos"] = len(candidatos)
-        sem_fin = [l for l in candidatos if norm(l.get("fin_lista")).startswith("NAO")]
-        com_fin = [l for l in candidatos if not norm(l.get("fin_lista")).startswith("NAO")]
-        reaproveitar = [l for l in com_fin if l["numero"] in cache and cache[l["numero"]].get("_assinatura") == assinatura(l)]
-        abrir = [l for l in com_fin if l not in reaproveitar]
-        cont["sem_financiamento_lista"] = len(sem_fin)
-        cont["reaproveitados"] = len(reaproveitar)
-        print(f"{cont['na_lista']} na lista; {len(candidatos)} candidatos; {len(reaproveitar)} reaproveitados; {len(abrir)} anúncios a abrir", flush=True)
-        imoveis = [montar(l, None, hoje) for l in sem_fin]
-        cont["sfi_2_leilao_avaliados"] = sum(1 for l in candidatos if l.get("_so_2_leilao"))
-        def guardar(l, det):
-            """Grava o imóvel, exceto o SFI que só estaria na faixa no 2º leilão e não está."""
-            if l.get("_so_2_leilao") and det is not None and not na_faixa_apos_anuncio(l, det, lmin, lmax):
-                cont["sfi_2_leilao_fora_da_faixa"] += 1
-                return
-            imoveis.append(montar(l, det, hoje))
-        for l in reaproveitar:
-            guardar(l, {k: cache[l["numero"]].get(k) for k in CAMPOS_ANUNCIO})
-        # páginas extras no mesmo contexto (cookies do anti-robô já resolvidos)
-        pages = [nav.page] + [nav.ctx.new_page() for _ in range(PARALELO - 1)]
-        fila = list(abrir); pend = {}; falhou = []
-        while fila or pend:
-            if time.time() - t0 > LIMITE_S:
-                cont["nao_lidos_por_tempo"] = len(fila) + len(pend)
-                for l in fila: imoveis.append(montar(l, None, hoje))
-                for l in pend.values(): imoveis.append(montar(l, None, hoje))
-                fila, pend = [], {}
-                break
-            for pg in pages:
-                if pg not in pend and fila:
-                    l = fila.pop(0)
+                    if l["preco"] is None:
+                        continue
+                    if not (lmin <= l["preco"] <= lmax):
+                        # Leilão SFI acima do teto na 1ª praça pode entrar na faixa no 2º leilão: abrir o anúncio para ver.
+                        extra = (eh_leilao(l) and l["preco"] > lmax and l["preco"] * FATOR_2_LEILAO_MIN <= lmax
+                                 and not norm(l.get("fin_lista")).startswith("NAO"))
+                        if not extra:
+                            continue
+                        l["_so_2_leilao"] = True
+                    if FRACAO.search(norm(l["descricao"])):
+                        continue
+                    if so_apto and not norm(l["descricao"]).startswith("APARTAMENTO"):
+                        continue
+                    candidatos.append(l)
+            cont["candidatos"] = len(candidatos)
+            sem_fin = [l for l in candidatos if norm(l.get("fin_lista")).startswith("NAO")]
+            com_fin = [l for l in candidatos if not norm(l.get("fin_lista")).startswith("NAO")]
+            reaproveitar = [l for l in com_fin if l["numero"] in cache and cache[l["numero"]].get("_assinatura") == assinatura(l)]
+            abrir = [l for l in com_fin if l not in reaproveitar]
+            cont["sem_financiamento_lista"] = len(sem_fin)
+            cont["reaproveitados"] = len(reaproveitar)
+            print(f"{cont['na_lista']} na lista; {len(candidatos)} candidatos; {len(reaproveitar)} reaproveitados; {len(abrir)} anúncios a abrir", flush=True)
+            imoveis = [montar(l, None, hoje) for l in sem_fin]
+            cont["sfi_2_leilao_avaliados"] = sum(1 for l in candidatos if l.get("_so_2_leilao"))
+            def guardar(l, det):
+                """Grava o imóvel, exceto o SFI que só estaria na faixa no 2º leilão e não está."""
+                if l.get("_so_2_leilao") and det is not None and not na_faixa_apos_anuncio(l, det, lmin, lmax):
+                    cont["sfi_2_leilao_fora_da_faixa"] += 1
+                    return
+                imoveis.append(montar(l, det, hoje))
+            for l in reaproveitar:
+                guardar(l, {k: cache[l["numero"]].get(k) for k in CAMPOS_ANUNCIO})
+            # páginas extras no mesmo contexto (cookies do anti-robô já resolvidos)
+            pages = [nav.page] + [nav.ctx.new_page() for _ in range(PARALELO - 1)]
+            fila = list(abrir); pend = {}; falhou = []
+            while fila or pend:
+                if time.time() - t0 > LIMITE_S:
+                    cont["nao_lidos_por_tempo"] = len(fila) + len(pend)
+                    for l in fila: imoveis.append(montar(l, None, hoje))
+                    for l in pend.values(): imoveis.append(montar(l, None, hoje))
+                    fila, pend = [], {}
+                    break
+                for pg in pages:
+                    if pg not in pend and fila:
+                        l = fila.pop(0)
+                        try:
+                            pg.goto(DETALHE.format(num=l["numero"]), wait_until="commit", timeout=60000)
+                            pend[pg] = l
+                        except Exception as e:  # noqa
+                            falhou.append(l); FALHAS.append({"numero": l["numero"], "erro": "goto: " + str(e)[:300]})
+                time.sleep(PAUSA)
+                for pg, l in list(pend.items()):
                     try:
-                        pg.goto(DETALHE.format(num=l["numero"]), wait_until="commit", timeout=60000)
-                        pend[pg] = l
+                        pg.wait_for_load_state("domcontentloaded", timeout=45000)
+                        for _ in range(4):
+                            if "RADWARE" not in pg.title().upper(): break
+                            pg.wait_for_timeout(3000)
+                        esperar_conteudo(pg)
+                        det = ler_anuncio(pg.content(), hoje)
+                        guardar(l, det); cont["anuncios_ok"] += 1
+                    except Indisponivel:
+                        cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
                     except Exception as e:  # noqa
-                        falhou.append(l); FALHAS.append({"numero": l["numero"], "erro": "goto: " + str(e)[:300]})
-            time.sleep(PAUSA)
-            for pg, l in list(pend.items()):
+                        falhou.append(l); FALHAS.append({"numero": l["numero"], "modalidade": l["modalidade"].strip(), "erro": str(e)[:700], "url": pg.url})
+                    del pend[pg]
+                if len(imoveis) % 40 < PARALELO:
+                    gravar(crit, hoje, cont, imoveis, True)
+                    print(f"{len(imoveis)}/{len(candidatos)} em {int(time.time()-t0)}s", flush=True)
+            # segunda tentativa, uma por vez e com calma
+            cont["segunda_tentativa"] = len(falhou); recuperados = 0
+            if falhou:  # página completa (sem bloquear estilos/imagens) para os casos difíceis
+                nav.ctx.unroute("**/*")
+            for l in falhou:
+                if time.time() - t0 > LIMITE_S:
+                    imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1; continue
                 try:
-                    pg.wait_for_load_state("domcontentloaded", timeout=45000)
-                    for _ in range(4):
-                        if "RADWARE" not in pg.title().upper(): break
-                        pg.wait_for_timeout(3000)
-                    esperar_conteudo(pg)
-                    det = ler_anuncio(pg.content(), hoje)
-                    guardar(l, det); cont["anuncios_ok"] += 1
+                    nav.page.wait_for_timeout(2500)
+                    nav.abrir(DETALHE.format(num=l["numero"]))
+                    esperar_conteudo(nav.page, 30000)
+                    det = ler_anuncio(nav.page.content(), hoje)
+                    guardar(l, det); cont["anuncios_ok"] += 1; recuperados += 1
                 except Indisponivel:
                     cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
                 except Exception as e:  # noqa
-                    falhou.append(l); FALHAS.append({"numero": l["numero"], "modalidade": l["modalidade"].strip(), "erro": str(e)[:700], "url": pg.url})
-                del pend[pg]
-            if len(imoveis) % 40 < PARALELO:
-                gravar(crit, hoje, cont, imoveis, True)
-                print(f"{len(imoveis)}/{len(candidatos)} em {int(time.time()-t0)}s", flush=True)
-        # segunda tentativa, uma por vez e com calma
-        cont["segunda_tentativa"] = len(falhou); recuperados = 0
-        if falhou:  # página completa (sem bloquear estilos/imagens) para os casos difíceis
-            nav.ctx.unroute("**/*")
-        for l in falhou:
-            if time.time() - t0 > LIMITE_S:
-                imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1; continue
-            try:
-                nav.page.wait_for_timeout(2500)
-                nav.abrir(DETALHE.format(num=l["numero"]))
-                esperar_conteudo(nav.page, 30000)
-                det = ler_anuncio(nav.page.content(), hoje)
-                guardar(l, det); cont["anuncios_ok"] += 1; recuperados += 1
-            except Indisponivel:
-                cont["indisponiveis"] = cont.get("indisponiveis", 0) + 1
-            except Exception as e:  # noqa
-                FALHAS.append({"numero": l["numero"], "tentativa": 2, "erro": str(e)[:700]})
-                imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1
-        cont["recuperados_2a_tentativa"] = recuperados
+                    FALHAS.append({"numero": l["numero"], "tentativa": 2, "erro": str(e)[:700]})
+                    imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1
+            cont["recuperados_2a_tentativa"] = recuperados
+    # Santander (SOLD): falha aqui não derruba a coleta da Caixa; fica registrada em "fontes".
+    if "santander" in FONTES:
+        try:
+            import santander
+            novos, cs = santander.coletar(crit, hoje, cidades, DIAG)
+            imoveis += novos
+            FONTES_RES["santander"] = {"ok": True, "contagens": cs}
+            print("Santander:", json.dumps(cs), flush=True)
+        except Exception as e:  # noqa
+            FONTES_RES["santander"] = {"ok": False, "erro": str(e)[:500]}
+            print("Santander falhou:", e, flush=True)
     gravar(crit, hoje, cont, imoveis, cont["nao_lidos_por_tempo"] > 0)
     print(json.dumps(cont), flush=True)
-    if cont["anuncios_ok"] == 0 and cont["falhas"] >= 10:
+    if "caixa" in FONTES and cont["anuncios_ok"] == 0 and cont["falhas"] >= 10:
         sys.exit("nenhum anúncio pôde ser lido — o site da Caixa pode estar bloqueando")
 
 

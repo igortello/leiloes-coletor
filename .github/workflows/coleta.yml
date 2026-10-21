@@ -1,4 +1,4 @@
-name: Coleta Caixa
+name: Coleta Caixa e Santander
 on:
   workflow_dispatch:
     inputs:
@@ -6,6 +6,10 @@ on:
         description: "Critérios do portal (JSON)"
         required: false
         default: ""
+      fontes:
+        description: "Fontes a coletar, separadas por vírgula (caixa, santander)"
+        required: false
+        default: "caixa,santander"
 permissions:
   contents: write
 concurrency:
@@ -29,6 +33,7 @@ jobs:
         env:
           LIMITE_MIN: "35"
           CRITERIOS: ${{ inputs.criterios }}
+          FONTES: ${{ inputs.fontes || 'caixa,santander' }}
         run: python coletor/coletar.py
       - name: Publicar resultado no ramo "resultados"
         if: always()
