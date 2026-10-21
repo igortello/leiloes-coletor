@@ -1,0 +1,310 @@
+{
+  "homeType": 1,
+  "storeId": [1161, 1741],
+  "showNewIframeHabilitation": true,
+  "portalId": [2, 15],
+  "hostName": "Sold",
+  "showCategoriesHome": true,
+  "isNewCardlist": true,
+  "baseUrlMarketplaceOfFaststore": "https://www.superbid.net",
+  "storeUrlAtMarketplace": "https://www.superbid.net/loja-oficial/sold-1161",
+  "locale": "pt-BR",
+  "country": "BR",
+  "countryId": "1",
+  "countryName": "brasil",
+  "currency": "BRL",
+  "storeType": "fastStore",
+  "GTMCode": "GTM-W2FCTMS7",
+  "hasOneSignal": true,
+  "offersOrderBy": [
+    {
+      "field": "endDate",
+      "order": "asc"
+    }
+  ],
+  "showMarketPlace": true,
+  "showFooterWhatsapp": true,
+  "hasScheduling": true,
+  "hasS4pay": false,
+  "bannersBaseUri": "https://banner-api.sbwebservices.net/banner?storeId=1161",
+  "showBannerMobile": true,
+  "showFavorites": true,
+  "showMenuCategories": true,
+  "filterStatusDefault": "opened",
+  "isLateralCategoryMenu": true,
+  "showCampaignLandfy": false,
+  "isNewCategoryView": true,
+  "isEnabledGeoLocation": true,
+  "isNewHeader": true,
+  "newHeaderLinks": [
+    {
+      "name": "Vender",
+      "href": "https://quero-vender.superbid.net/",
+      "target": "_blank"
+    },
+    {
+      "name": "FAQ",
+      "href": "/ajuda",
+      "target": "_self"
+    },
+    {
+      "name": "Blog",
+      "href": "https://blog.superbid.net/?utm_source=blog&utm_medium=sitesuperbid&utm_campaign=home",
+      "target": "_blank"
+    }
+  ],
+  "title": "Sold - venda e leilão de imóveis, eletrônicos e muito mais",
+  "titleCopyright": "Sold",
+  "favicon": "https://s.superbid.net/image/2a/72/2a72f5e2-ae6b-4f5f-b256-56ee7353b271.png",
+  "logoUri": "https://s.superbid.net/image/2c/a2/2ca2e271-7cd2-4dd5-9bde-bb16e91f08e5.png",
+  "logoUriFooter": "https://s.superbid.net/image/2c/a2/2ca2e271-7cd2-4dd5-9bde-bb16e91f08e5.png",
+  "contentBanner": {
+    "subtitle": "Encontre as melhores oportunidades para você ou para o seu negócio.",
+    "imoveis": "https://s.superbid.net/image/78/4f/784fc6ec-1455-4de1-b002-d4e4f52eaa46.png"
+  },
+  "palette": {
+    "primary": {
+      "light": "#ec660b",
+      "main": "#ec660b",
+      "dark": "#ec660b",
+      "contrastText": "#fff"
+    },
+    "secondary": {
+      "light": "#5B5B5B",
+      "main": "#5B5B5B",
+      "dark": "#5B5B5B",
+      "contrastText": "#fff"
+    },
+    "contrast": {
+      "light": "#E6E7E7",
+      "dark": "#313234",
+      "main": "#131415",
+      "secondary": "#66696F"
+    },
+    "background": {
+      "main": "#FFFFFF",
+      "hover": "#F9F9F9",
+      "light": "#EBECED",
+      "light2": "#EBECEDB2",
+      "shadow": "#BD26FC0D"
+    },
+    "judicial": {
+      "judicial": "#06949F",
+      "subjudice": "#FB9E25"
+    },
+    "grey": {
+      "light": "#e5e5e5",
+      "main": "#9f9f9f",
+      "dark": "#475665"
+    },
+    "orange": {
+      "light": "#fff2e9"
+    },
+    "auctionCards": {
+      "live": "#ec660b",
+      "inProgress": "#36af86",
+      "finished": "#ff3939",
+      "comingSoon": "#36af86",
+      "allotment": "#f9a825",
+      "default": "#ec660b"
+    }
+  },
+  "policyLinks": [
+    {
+      "title": "Aviso de Cookies",
+      "text": "Como coletamos os seus dados de navegação para melhorar sua experiência no site.",
+      "href": "https://s.superbid.net/politicas-institucionais/aviso-de-cookies.pdf",
+      "privacy": false
+    },
+    {
+      "title": "Aviso de Privacidade",
+      "text": "Como usamos os seus dados pessoais para melhorar sua experiência no site.",
+      "href": "https://s.superbid.net/politicas-institucionais/aviso-de-privacidade.pdf",
+      "privacy": false
+    },
+    {
+      "title": "Política de Segurança",
+      "text": "Como mantemos a sua navegação e seus dados seguros.",
+      "href": "https://s.superbid.net/politicas-institucionais/politica-seguranca-da-informacao.pdf",
+      "privacy": false
+    },
+    {
+      "title": "Termos e Condições de Uso da Superbid Exchange e da Conta Digital SuperbidPay",
+      "text": "Como utilizar o site de forma correta e segura.",
+      "href": "https://s.superbid.net/politicas-institucionais/termos-de-uso-do-site.pdf",
+      "privacy": false
+    },
+    {
+      "title": "Demais Termos e Políticas",
+      "text": "Demais textos de termos e políticas de venda",
+      "href": "https://myaccount.stage.superbid.com/policies",
+      "privacy": true
+    }
+  ],
+  "segmentos": [
+    {
+      "name": "Canal Corporativo",
+      "urlName": "corporativo",
+      "shelf": [
+        {
+          "type": "events",
+          "name": "Eventos em Destaque",
+          "submarketplaceImg": "",
+          "filter": "subMarketplaces.id:1;storeIds:1161;",
+          "searchType": "opened",
+          "orderBy": "price:desc;visits:desc",
+          "rows": 3
+        },
+        {
+          "type": "offers",
+          "storeImg": "",
+          "searchType": "opened",
+          "name": "Imóveis em Destaque",
+          "filter": "stores.id:[1161];product.productType.description:imoveis;auction.subMarketplaces.subMarketplaceDesc:corporativo;",
+          "orderBy": "price:desc;visits:desc",
+          "rows": 2
+        }
+      ]
+    },
+    {
+      "name": "PME e Bens de Consumo",
+      "urlName": "pme",
+      "shelf": [
+        {
+          "type": "events",
+          "name": "Destaques PME e Bens de Consumo",
+          "submarketplaceImg": "",
+          "filter": "subMarketplaces.id:4;storeIds:1161;",
+          "searchType": "opened",
+          "orderBy": "price:desc;visits:desc",
+          "rows": 2
+        },
+        {
+          "type": "offers",
+          "storeImg": "",
+          "searchType": "opened",
+          "name": "Ofertas em Destaque",
+          "filter": "stores.id:[1161];auction.subMarketplaces.subMarketplaceDesc:pme;",
+          "orderBy": "price:desc;visits:desc",
+          "rows": 2
+        }
+      ]
+    },
+    {
+      "name": "Canal Judicial",
+      "urlName": "judicial",
+      "shelf": [
+        {
+          "type": "offers",
+          "storeImg": "",
+          "searchType": "opened",
+          "name": "Destaque do dia",
+          "filter": "stores.id:[1741];",
+          "orderBy": "price:desc;visits:desc",
+          "rows": 1
+        }
+      ]
+    }
+  ],
+  "spotlight": {
+    "shelf": [
+      {
+        "type": "offers",
+        "storeImg": "",
+        "searchType": "opened",
+        "name": "Destaques do Site",
+        "filter": "stores.id:[1161,1741];",
+        "orderBy": "price:desc;visits:desc;endDate:asc",
+        "rows": 1
+      }
+    ]
+  },
+  "institutionalContent": {
+    "whoWeAre": "",
+    "customerServicesChannel": ""
+  },
+  "headerLinks": [
+    {
+      "link": {
+        "name": "Inscreva-se na newsletter",
+        "href": "#",
+        "target": "_self",
+        "action": {
+          "name": "handleOpenCampaignModal",
+          "value": true
+        }
+      }
+    },
+    {
+      "link": {
+        "name": "Quero Vender",
+        "href": "https://quero-vender.superbid.net/",
+        "target": "_blank"
+      }
+    },
+    {
+      "link": {
+        "name": "FAQ",
+        "href": "/ajuda",
+        "target": "_self"
+      }
+    },
+    {
+      "link": {
+        "name": "Blog",
+        "href": "https://blog.superbid.net/?utm_source=blog&utm_medium=sitesuperbid&utm_campaign=home",
+        "target": "_blank"
+      }
+    }
+  ],
+  "contactMenu": [
+    {
+      "title": "whatsapp",
+      "number": "551149509400"
+    },
+    {
+      "title": "endereço",
+      "address": "Rua Henrique Monteiro, 125 – Pinheiros – São Paulo - SP, 05423-020"
+    },
+    {
+      "title": "telefone",
+      "businessHours": "09:00 18:00",
+      "number": "(11) 4950-9400"
+    }
+  ],
+  "socialMedia": [
+    {
+      "name": "Facebook",
+      "link": "https://pt-br.facebook.com/SOLDLeiloes/",
+      "alt": "Facebook Sold",
+      "src": "images/social/social-facebook.svg"
+    },
+    {
+      "name": "Instagram",
+      "link": "https://www.instagram.com/soldleiloes/?hl=pt-br",
+      "alt": "Instagram Sold",
+      "src": "images/social/social-instagram.png"
+    }
+  ],
+  "newFooter": {
+    "titleDescription": "A Sold Leilões oferece serviços diferenciados com o objetivo de simplificar os leilões e alavancar o índice de vendas, baseado em procedimentos eficazes e exclusivos que vão gerar maior qualidade nos leilões.",
+    "textFooter": "Sold © <small> &#8226; </small> Rua Henrique Monteiro, 125 – Pinheiros – São Paulo - SP, 05423-020",
+    "textRight": "<a href='/aviso-de-privacidade/'>Privacidade</a> <small> &#8226; </small> <a href='/politica-de-seguranca/'>Segurança</a> <small> &#8226; </small> <a href='/aviso-de-cookies/'>Cookies</a>",
+    "logoUri": "https://s.superbid.net/image/78/ff/78ffcc94-5067-49ab-8244-4209ef2d70d5.png",
+    "reclameAquiUrl": "https://www.reclameaqui.com.br/empresa/sold/",
+    "socialMedia": [
+      {
+        "name": "facebook",
+        "url": "https://pt-br.facebook.com/SOLDLeiloes/"
+      },
+      {
+        "name": "instagram",
+        "url": "https://www.instagram.com/soldleiloes/?hl=pt-br"
+      },
+      {
+        "name": "whatsapp",
+        "url": "http://wa.me/551149509400"
+      }
+    ]
+  }
+}

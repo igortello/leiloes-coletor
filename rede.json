@@ -1,0 +1,253 @@
+[
+ {
+  "url": "https://siteconfig.superbid.net/www.sold.com.br/style.config.json",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_001.json"
+ },
+ {
+  "url": "https://www.google.com/ccm/collect?rcb=14&frm=0&apvc=1&ae=g&auid=626739797.1792596946&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=page_view&dl=https%3A%2F%2Fwww.sold.com.br%2F&scrsrc=www.googletagmanager.com&rnd=1639287871.1792596946&navt=n&npa=0&ep.ads_data_redaction=0&gtm=45He6aj1v9184415481za200zd9184415481xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616986~115938465~115938469~118897920~118897930~120385422~120469145~120469153~121049589~121246026~121246034&tft=1792596945714&tfd=2124&fmt=8",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://ad.doubleclick.net/ccm/s/collect?auid=626739797.1792596946&gtm=45He6aj1v9184415481za200zd9184415481xeaxf1&fmt=8",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/ccm/collect?rcb=14&frm=0&apvc=0&auid=626739797.1792596946&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&tid=AW-10786552632&en=page_view&dl=https%3A%2F%2Fwww.sold.com.br%2F&scrsrc=www.googletagmanager.com&rnd=1639287871.1792596946&navt=n&npa=0&gtm=45be6aj1v9137456890za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616985~115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&tft=1792596945880&tfd=2290&tids=AW-10786552632&fmt=8",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/rmkt/collect/10786552632/?random=1792596945832&cv=11&fst=1792596945832&fmt=8&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6aj1v9137456890za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616985~115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&u_w=1280&u_h=720&url=https%3A%2F%2Fwww.sold.com.br%2F&rcb=14&frm=0&tiba=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=626739797.1792596946&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uamb=0&uam=&uap=Linux&uapv=&uaw=0&data=event%3Dgtag.config&ept=68&gcp=5",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/ccm/collect?rcb=13&frm=0&apvc=0&auid=626739797.1792596946&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&tid=AW-17688687471&en=page_view&dl=https%3A%2F%2Fwww.sold.com.br%2F&scrsrc=www.googletagmanager.com&rnd=1639287871.1792596946&navt=n&npa=0&gtm=45be6aj1v9233728966za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938465~115938469~118897920~118897930~120213116~120385422~120412527~120469145~120469153~121246026~121246034&tft=1792596945944&tfd=2354&tids=AW-17688687471&fmt=8",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/rmkt/collect/17688687471/?random=1792596945905&cv=11&fst=1792596945905&fmt=8&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6aj1v9233728966za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938465~115938469~118897920~118897930~120213116~120385422~120412527~120469145~120469153~121246026~121246034&u_w=1280&u_h=720&url=https%3A%2F%2Fwww.sold.com.br%2F&rcb=13&frm=0&tiba=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=626739797.1792596946&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uamb=0&uam=&uap=Linux&uapv=&uaw=0&data=event%3Dgtag.config&ept=68&gcp=5",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/measurement/conversion?random=1792596945994&cv=11&tid=G-J5G7LW8YR5&fst=1792596945994&fmt=8&en=session_start&gtm=45je6aj1v890900102za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&u_w=1280&u_h=720&url=https%3A%2F%2Fwww.sold.com.br%2F&gacid=905943704.1792596946&hn=www.googleadservices.com&frm=0&tiba=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&npa=0&pscdl=noapi&auid=626739797.1792596946&capi=1&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uamb=0&uam=&uap=Linux&uapv=&uaw=0&rcb=11",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/rmkt/collect/1050054312/?random=1792596946045&cv=11&fst=1792596946045&fmt=8&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45je6aj1v890900102za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&u_w=1280&u_h=720&url=https%3A%2F%2Fwww.sold.com.br%2F&rcb=11&frm=0&tiba=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=626739797.1792596946&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uamb=0&uam=&uap=Linux&uapv=&uaw=0&data=event%3Dgtag.config&ept=68&gcp=5",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/ccm/collect?rcb=11&frm=0&apvc=0&auid=626739797.1792596946&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&tid=AW-1050054312&en=page_view&dl=https%3A%2F%2Fwww.sold.com.br%2F&scrsrc=www.googletagmanager.com&rnd=1639287871.1792596946&navt=n&npa=0&gtm=45je6aj1v890900102za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&tft=1792596946064&tfd=2474&tids=AW-1050054312~AW-1014545539&fmt=8",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://www.google.com/rmkt/collect/1014545539/?random=1792596946054&cv=11&fst=1792596946054&fmt=8&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45je6aj1v890900102za20ozb9184415481zd9184415481xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&u_w=1280&u_h=720&url=https%3A%2F%2Fwww.sold.com.br%2F&rcb=11&frm=0&tiba=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=626739797.1792596946&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uamb=0&uam=&uap=Linux&uapv=&uaw=0&data=event%3Dgtag.config&ept=68&gcp=5",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": ""
+ },
+ {
+  "url": "https://analytics.google.com/g/collect?v=2&tid=G-J5G7LW8YR5&gtm=45je6aj1v890900102za20ozb9184415481zd9184415481xf1&_p=1792596945497&_gaz=1&gcd=13l3l3l3l1l1&npa=0&dma=0&ecid=1055751811&_eu=EAAAAGAC&_prs=ok&are=1&cid=905943704.1792596946&ec_mode=a&frm=0&ir=1&pscdl=noapi&rcb=11&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&gaf=2&_s=1&tag_exp=115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&sid=1792596945&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=page_view&_fv=1&_nsi=1&_ss=2&tfd=2453",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-S5KB427M9Y&gtm=45je6ak0h2v9176984848za208zd9176984848xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=13&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=1&tag_exp=115616986~115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=page_view&_fv=1&_ss=1&_ee=1&tfd=2518",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-N7ZQNZ68R5&gtm=45je6aj1v9179560212za208zd9179560212xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=1&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=1&tag_exp=115938465~115938469~118897920~118897930~120213116~120385422~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=page_view&_fv=1&_ss=1&_ee=1&tfd=2561",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-V76GTDEFHP&gtm=45je6aj1v9210005230za208zd9210005230xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=1&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=1&tag_exp=115616986~115938465~115938468~118012009~118897920~118897930~120213116~120385422~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=page_view&_fv=1&_ss=1&_ee=1&tfd=2628",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-PJD2XY63F4&gtm=45je6aj1v9232911139za208zd9232911139xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=18&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=1&tag_exp=115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=page_view&_fv=1&_ss=1&_ee=1&tfd=2720",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://banner-api.sbwebservices.net/banner?storeId=1161",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json; charset=utf-8",
+  "arquivo": "amostras/resp_002.json"
+ },
+ {
+  "url": "https://www.sold.com.br/jsnlog.logger",
+  "metodo": "POST",
+  "post": "{\"r\":\"\",\"lg\":[{\"l\":6000,\"m\":\"{\\\"stack\\\":\\\"TypeError: Object(...)(...).then is not a function\\\\n    at https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3161859\\\\n    at u (https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3153167)\\\\n    at Generator.<anonymous> (https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3154505)\\\\n    at Generator.next (https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3153530)\\\\n    at h2 (https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3159159)\\\\n    at i (https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3162463)\\\\n    at https://www.sold.com.br/js/bundle.4f66b427cd08ca0bb7b4.js:1:3162524\\\\n    at nrWrapper (https://www.sold.com.br/:124:17765)\\\\n    at new Promise (<anonymous>)\\\\n    at new Promise (https://www.sold.com.br/:124:52215)\\\",\\\"message\\\":\\\"Unhandled Promise Rejection: Object(...)(...).then is not a function\\\",\\\"name\\\":\\\"TypeError\\\",\\\"logData\\\":{\\\"msg\\\":\\\"unhandledrejection\\\",\\\"errorMsg\\\":\\\"Unhandled Promise Rejection: Object(...)(...).then is not a function\\\"}}\",\"n\":\"onerrorLogger\",\"t\":1792596945547,\"u\":1}]}",
+  "status": 200,
+  "tipo": "text/html"
+ },
+ {
+  "url": "https://offer-query.superbid.net/categories/?portalId=[2,15]&storeId=[1161,1741]&requestOrigin=store&locale=pt_BR",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_003.json"
+ },
+ {
+  "url": "https://event-query.superbid.net/submarketplaces/?portalId=[2,15]",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json;charset=UTF-8",
+  "arquivo": "amostras/resp_004.json"
+ },
+ {
+  "url": "https://bam.nr-data.net/1/NRJS-33f29f8a3c00e1938de?a=1835087883&sa=1&v=1.281.0&t=Unnamed%20Transaction&rst=3330&ck=0&s=ff400b863d56159f&ref=https://www.sold.com.br/&ptid=f19863adf2bd2221&af=err,spa,xhr,stn,ins&be=1090&fe=2026&dc=603&fsh=1&perf=%7B%22timing%22:%7B%22of%22:1792596943590,%22n%22:0,%22f%22:0,%22dn%22:2,%22dne%22:196,%22c%22:196,%22s%22:206,%22ce%22:231,%22rq%22:231,%22rp%22:1091,%22rpe%22:1095,%22di%22:1693,%22ds%22:1693,%22de%22:1693,%22dc%22:3111,%22l%22:3111,%22le%22:3116%7D,%22navigation%22:%7B%7D%7D&fp=1968&fcp=1968",
+  "metodo": "POST",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_005.json"
+ },
+ {
+  "url": "https://event-query.superbid.net/events/v2/?portalId=[2,15]&locale=pt_BR&timeZoneId=UTC&filter=subMarketplaces.id:[1,4];storeIds:1161;modalityId:[1,4,5,7]&pageNumber=1&pageSize=1&byPage=marketPlacePage",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_006.json"
+ },
+ {
+  "url": "https://bam.nr-data.net/events/1/NRJS-33f29f8a3c00e1938de?a=1835087883&sa=1&v=1.281.0&t=Unnamed%20Transaction&rst=3610&ck=0&s=ff400b863d56159f&ref=https://www.sold.com.br/&ptid=f19863adf2bd2221",
+  "metodo": "POST",
+  "post": "bel.7;1,l,,2s4,2kj,8u,'initialPageLoad,'https://www.sold.com.br/,1,1,,,!!!!'a62da482-055b-464d-ae92-84907a0ccb0b,'1,1io,1io;2,,1a9,49,3n,2,'GET,5k,'siteconfig.superbid.net:443,'/www.sold.com.br/style.config.json,,6xs,,'2,!!!;2,,1n1,i,,,'POST,,'www.google.com:443,'/ccm/collect,,,1,'12,!!!;2,,1n2,1b,fo,2,8,,'ad.doubleclick.net:443,'/ccm/s/collect,,,1,'13,!!!;2,,1rn,7u,,,8,,9,a,,,1,'15,!!!;2,,1rj,7y,1,,8,,9,'/rmkt/collect/10786552632/,,,1,'14,!!!;2,,1te,64,,,8,,9,a,,,1,'17,!!!;2,,1tc,66,1,,8,,9,'/rmkt/collect/17688687471/,,,1,'16,!!!;2,,1w1,3k,,,8,,9,'/measurement/conversion,,,1,'18,!!!;2,,1wf,36,,,8,,9,'/rmkt/collect/1050054312/,,,1,'20,!!!;2,,1wq,2w,,,8,,9,a,,,1,'22,!!!;2,,1wl,31,,,8,,9,'/rmkt/collect/1014545539/,,,1,'21,!!!;2,,1w6,3h,,,8,,'analytics.google.com:443,'/g/collect,,,1,'19,!!!;2,,1y0,5u,,,8,,'www.google-analytics.com:443,t,,,1,'23,!!!;2,,1z6,4r,,,8,,v,t,,,1,'24,!!!;2,,212,2y,,,8,,v,t,,,1,'26,!!!;2,,23n,j,8,,8,,v,t,,,1,'27,!!!;2,,1i0,om,o,b,4,5k,'banner-api.sbwebservices.net:443,'/banner,,3gv,,'4,!!!;2,,1ie,q5,,1,8,5k,'www.sold.com.br:443,'/jsnlog.logger,v8,1gs2,,'11,'a5eb7650110834b9,'5b8278ed2a2bbfd0be4ffbcfc7fd200f,mvi9xrks;2,,1hz,xb,,,4,5k,'offer-query.superbid.net:443,'/categories/,,ehn,,'3,!!!;2,,2ej,28,3s,8,4,5k,'gleam.io:443,'/me,,,2,'28,!!!;2,,1i2,19o,1,1,4,5k,'event-query.superbid.net:443,'/submarketplaces/,,c8,,'7,!!!;b,!!!!,2,5e,,a,p,,nw,4,!gm,,,13e,,5",
+  "status": 200,
+  "tipo": "image/gif"
+ },
+ {
+  "url": "https://offer-query.superbid.net/categories/?portalId=[2,15]&storeId=[1161,1741]&requestOrigin=store&locale=pt_BR",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_010.json"
+ },
+ {
+  "url": "https://event-query.superbid.net/events/v2/?portalId=[2,15]&locale=pt_BR&timeZoneId=UTC&filter=subMarketplaces.id:1;storeIds:1161;modalityId:[1,4,5,7]&pageNumber=1&pageSize=45&byPage=marketPlacePage",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_009.json"
+ },
+ {
+  "url": "https://offer-query.superbid.net/offers/?portalId=[2,15]&requestOrigin=store&locale=pt_BR&timeZoneId=UTC&searchType=opened&filter=stores.id:[1161];product.productType.description:imoveis;auction.subMarketplaces.subMarketplaceDesc:corporativo;isShopping:false;auction.modalityId:[1,4,5,7]&pageNumber=1&pageSize=24&orderBy=price:desc;visits:desc&fieldList=id;visits;linkURL;price;priceFormatted;hidePrices;commissionPercent;commercialCondition;eventPipeline;isFavorite;endDate;offerStatus;offerStatusHybrid;stores;store;product.shortDesc;product.template;product.productType;product.galleryJson;product.thumbnailUrl;auction;installmentPaymentTerms;offerTypeId;offerDetail;statusId;totalBids;endDateTime;isShopping;isAfterMarket;quantityUnitType;quantityUnit;systemMetric;quantityInLot;quantityAvailableForProposal;totalInterested&preOrderBy=orderByFirstOpenedOffers",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_008.json"
+ },
+ {
+  "url": "https://offer-query.superbid.net/offers/?portalId=[2,15]&requestOrigin=store&locale=pt_BR&timeZoneId=UTC&searchType=opened&filter=stores.id:[1161,1741];isShopping:false;auction.modalityId:[1,4,5,7]&pageNumber=1&pageSize=24&orderBy=price:desc;visits:desc;endDate:asc&fieldList=id;visits;linkURL;price;priceFormatted;hidePrices;commissionPercent;commercialCondition;eventPipeline;isFavorite;endDate;offerStatus;offerStatusHybrid;stores;store;product.shortDesc;product.template;product.productType;product.galleryJson;product.thumbnailUrl;auction;installmentPaymentTerms;offerTypeId;offerDetail;statusId;totalBids;endDateTime;isShopping;isAfterMarket;quantityUnitType;quantityUnit;systemMetric;quantityInLot;quantityAvailableForProposal;totalInterested&preOrderBy=orderByFirstOpenedOffers",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_007.json"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-S5KB427M9Y&gtm=45je6ak0h2v9176984848za200zd9176984848xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=13&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=2&tag_exp=115616986~115938465~115938468~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=scroll&epn.percent_scrolled=90&_et=7207&tfd=14728",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-N7ZQNZ68R5&gtm=45je6aj1v9179560212za200zd9179560212xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=1&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=2&tag_exp=115938465~115938469~118897920~118897930~120213116~120385422~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=scroll&epn.percent_scrolled=90&_et=7170&tfd=14734",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-PJD2XY63F4&gtm=45je6aj1v9232911139za200zd9232911139xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=18&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=2&tag_exp=115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=scroll&epn.percent_scrolled=90&_et=7026&tfd=14750",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-V76GTDEFHP&gtm=45je6aj1v9210005230za200zd9210005230xf1&_p=1792596945497&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=905943704.1792596946&frm=0&ngs=1&pscdl=noapi&rcb=1&sr=1280x720&uaa=x64&uab=64&uafvl=HeadlessChrome%3B129.0.6668.29%7CNot%253DA%253FBrand%3B8.0.0.0%7CChromium%3B129.0.6668.29&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=pt-br&_s=2&tag_exp=115616986~115938465~115938468~118012009~118897920~118897930~120213116~120385422~120469145~120469153~121246026~121246034&sid=1792596946&sct=1&seg=0&dl=https%3A%2F%2Fwww.sold.com.br%2F&dt=Sold%20-%20venda%20e%20leil%C3%A3o%20de%20im%C3%B3veis%2C%20eletr%C3%B4nicos%20e%20muito%20mais&en=scroll&epn.percent_scrolled=90&_et=7109&tfd=14741",
+  "metodo": "POST",
+  "post": "",
+  "status": 204,
+  "tipo": "text/plain"
+ },
+ {
+  "url": "https://offer-query.superbid.net/offers/?portalId=[2,15]&requestOrigin=store&locale=pt_BR&timeZoneId=UTC&filter=auction.id:802443&pageSize=3",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_011.json"
+ },
+ {
+  "url": "https://event-query.superbid.net/events/v2/?portalId=[2,15]&locale=pt_BR&timeZoneId=UTC&filter=id:802443&pageSize=1",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_012.json"
+ },
+ {
+  "url": "https://offer-query.superbid.net/offers/?portalId=[2,15]&requestOrigin=store&locale=pt_BR&timeZoneId=UTC&searchType=opened&filter=product.productType.description:imoveis;stores.id:[1161,1741]&pageSize=1",
+  "metodo": "GET",
+  "post": "",
+  "status": 200,
+  "tipo": "application/json",
+  "arquivo": "amostras/resp_013.json"
+ }
+]
