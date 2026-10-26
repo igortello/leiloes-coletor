@@ -1,0 +1,28 @@
+name: Amostra
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URLs separadas por espaço"
+        required: true
+permissions:
+  contents: write
+jobs:
+  amostra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.47.0 && python -m playwright install --with-deps chromium
+      - run: python coletor/amostra.py
+        env:
+          URLS: ${{ inputs.urls }}
+      - name: Publicar no ramo "amostras"
+        if: always()
+        run: |
+          cd amostras && git init -q -b amostras && git add -A
+          git -c user.name="coletor" -c user.email="coletor@users.noreply.github.com" commit -q -m "Amostra ${{ github.run_id }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" amostras
