@@ -1,4 +1,4 @@
-"""Coletor do Portal de Leilões — imóveis Caixa e Santander/SOLD (SP/RJ).
+"""Coletor do Portal de Leilões — imóveis Caixa e Santander/Inter na SOLD (SP/RJ).
 
 Baixa as listas oficiais da Caixa, aplica os critérios do portal, abre o
 anúncio de cada candidato e grava saida/resultado.json.
@@ -213,7 +213,7 @@ def detalhe_campos(t, hoje):
 LIMITE_S = float(os.environ.get("LIMITE_MIN", "33")) * 60
 PARALELO = int(os.environ.get("PARALELO", "3"))
 FALHAS = []
-FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa,santander").split(",") if f.strip()}
+FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa,santander,inter").split(",") if f.strip()}
 FONTES_RES = {}
 
 
@@ -439,17 +439,20 @@ def main():
                     FALHAS.append({"numero": l["numero"], "tentativa": 2, "erro": str(e)[:700]})
                     imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1
             cont["recuperados_2a_tentativa"] = recuperados
-    # Santander (SOLD): falha aqui não derruba a coleta da Caixa; fica registrada em "fontes".
-    if "santander" in FONTES:
+    # SOLD (Santander e Inter): falha aqui não derruba a coleta da Caixa; fica registrada em "fontes".
+    bancos_sold = [b for b in ("Santander", "Inter") if b.lower() in FONTES]
+    if bancos_sold:
         try:
-            import santander
-            novos, cs = santander.coletar(crit, hoje, cidades, DIAG)
+            import sold
+            novos, cs = sold.coletar(crit, hoje, cidades, DIAG, bancos_sold)
             imoveis += novos
-            FONTES_RES["santander"] = {"ok": True, "contagens": cs}
-            print("Santander:", json.dumps(cs), flush=True)
+            for b, c in cs.items():
+                FONTES_RES[b.lower()] = {"ok": True, "contagens": c}
+                print(f"{b}:", json.dumps(c, ensure_ascii=False), flush=True)
         except Exception as e:  # noqa
-            FONTES_RES["santander"] = {"ok": False, "erro": str(e)[:500]}
-            print("Santander falhou:", e, flush=True)
+            for b in bancos_sold:
+                FONTES_RES[b.lower()] = {"ok": False, "erro": str(e)[:500]}
+            print("SOLD falhou:", e, flush=True)
     gravar(crit, hoje, cont, imoveis, cont["nao_lidos_por_tempo"] > 0)
     print(json.dumps(cont), flush=True)
     if "caixa" in FONTES and cont["anuncios_ok"] == 0 and cont["falhas"] >= 10:

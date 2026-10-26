@@ -1,14 +1,17 @@
-"""Coletor Santander — imóveis do Banco Santander vendidos pela SOLD (grupo Superbid).
+"""Coletor SOLD — imóveis do Santander e do Banco Inter vendidos pela SOLD (grupo Superbid).
 
 Usa a mesma API pública que o site www.sold.com.br usa para montar as listas
 (offer-query.superbid.net), chamada a partir de uma página aberta da SOLD, com
 poucas requisições e pausa entre elas. Não abre superbid.net (que pede verificação
 anti-robô) nem santanderimoveis.com.br (que bloqueia servidores).
 
-Só entram ofertas cujo vendedor é o Santander. A forma de pagamento vem do campo
-"Condições de Pagamento" de cada lote (ex.: "À vista ou Financiamento em até 420
-meses."). Nos leilões de alienação fiduciária o Santander tem vendido só à vista.
+Só entram ofertas cujo vendedor é um dos bancos pedidos (Santander, Inter). A forma
+de pagamento vem do campo "Condições de Pagamento" de cada lote (ex.: "À vista ou
+Financiamento em até 420 meses."). Nos leilões de alienação fiduciária o Santander tem
+vendido só à vista. O Inter tem oferecido "financiamento direto" do próprio banco
+(entrada mínima de 30% a 50%, 24 a 240 meses, juros + IPCA).
 """
+from collections import Counter
 import html as _html, json, re, time, unicodedata
 from datetime import datetime, timedelta, timezone
 
@@ -50,10 +53,19 @@ def slug(s):
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", s)).strip("-")
 
 
-def eh_santander(o):
+INTER = re.compile(r"\bBANCO INTER\b|\bINTER S ?/? ?A\b|\bINTERMEDIUM\b|^INTER\b")
+PREFIXO = {"Santander": "S", "Inter": "I"}
+
+
+def banco_de(o):
+    """'Santander', 'Inter' ou None, pelo vendedor ou pelo nome do evento."""
     vend = norm((o.get("seller") or {}).get("name"))
     ev = norm((o.get("auction") or {}).get("desc"))
-    return "SANTANDER" in vend or ev.startswith("SANTANDER")
+    if "SANTANDER" in vend or ev.startswith("SANTANDER"):
+        return "Santander"
+    if INTER.search(vend) or INTER.search(ev):
+        return "Inter"
+    return None
 
 
 def campos_template(p):
@@ -105,7 +117,7 @@ def cidade_uf(endereco, curto, loc_cidade):
     return loc_cidade, None, None
 
 
-def montar(o, hoje):
+def montar(o, hoje, banco="Santander"):
     p = o.get("product") or {}
     a = o.get("auction") or {}
     tpl = campos_template(p)
@@ -139,8 +151,13 @@ def montar(o, hoje):
     deb_txt = achar(r"(OS D[ÉE]BITOS[^\n.]*(?:\.|$))", desc) or (f"Débitos: {deb}" if deb else None)
     area = tpl.get("areaprivativa") or tpl.get("areatotal") or num_br(achar(r"[ÁA]rea Privativa:\s*([\d.,]+)", desc))
     fin = "FINANCIAMENTO" in norm(cond) if cond else None
+    if not cond:  # sem o campo: procura a regra no texto do lote/evento
+        txt = norm(desc + " " + texto_html((a.get("fullDescription") or "")))
+        if "FINANCIAMENTO" in txt:
+            cond = achar(r"([^\n]*financiamento[^\n]*)", desc + "\n" + texto_html(a.get("fullDescription") or ""))
+            fin = True if cond else None
     d = {
-        "banco": "Santander", "fonte": "SOLD", "numero_bem": f"S{o['id']}", "id_oferta": o["id"],
+        "banco": banco, "fonte": "SOLD", "numero_bem": f"{PREFIXO[banco]}{o['id']}", "id_oferta": o["id"],
         "uf": uf, "cidade": cidade, "bairro": bairro, "endereco": endereco, "empreendimento": None,
         "tipo": tipo, "area_privativa": float(area) if area not in (None, "") else None, "area_total": None,
         "quartos": int(tpl["quartos"]) if str(tpl.get("quartos", "")).isdigit() else (int(achar(r"Dormit[óo]rios:\s*(\d+)", desc)) if achar(r"Dormit[óo]rios:\s*(\d+)", desc) else None),
@@ -169,6 +186,15 @@ def montar(o, hoje):
     if re.search(r"direito de prefer[êe]ncia", desc, re.I): al.append("Direito de preferência do fiduciante")
     acao = achar(r"(Recai sobre o im[óo]vel[^\n]+)", desc)
     if acao: al.append(acao[:160])
+    if banco == "Inter" and fin:
+        ctx = desc + "\n" + texto_html(a.get("fullDescription") or "")
+        ent = achar(r"entrada (?:m[íi]nima )?de\s*(\d{1,2})\s*%", ctx)
+        juros = achar(r"(\d{1,2}[.,]\d{1,2})\s*%\s*(?:a\.?\s*a\.?|ao ano)", ctx)
+        al.append("Financiamento direto do Inter" + (f": entrada mínima {ent}%" if ent else "")
+                  + (f", juros {juros}% a.a." if juros else "") + (" + IPCA" if "IPCA" in norm(ctx) else "")
+                  + " — confirmar no edital (percentual financiável e se vale para imóvel ocupado)")
+        if ent:
+            d["entrada_min_pct"] = int(ent) / 100
     al.append("Comissão do leiloeiro: confirmar no edital")
     if v2: al.append("2º leilão" + (" em " + d2.strftime("%d/%m") if d2 else "") + ": R$ " + f"{v2:,.0f}".replace(",", "."))
     d["alertas"] = al
@@ -183,13 +209,14 @@ def buscar(pg, url):
     return json.loads(r["txt"])
 
 
-def coletar(crit, hoje, cidades, diag):
-    """Devolve (imoveis, contagens). cidades = {"SP": set(norm), "RJ": set(norm)}."""
+def coletar(crit, hoje, cidades, diag, bancos=("Santander", "Inter")):
+    """Devolve (imoveis, {banco: contagens}). cidades = {"SP": set(norm), "RJ": set(norm)}."""
     from playwright.sync_api import sync_playwright
     lmin, lmax = crit.get("lance_min", 0), crit.get("lance_max", 10**12)
     so_apto = crit.get("somente_apartamentos", True)
-    cont = {"ofertas_sold": 0, "santander": 0, "candidatos": 0, "sem_financiamento": 0, "fora_cidade": 0,
-            "fora_faixa": 0, "fora_tipo": 0}
+    conts = {b: {"ofertas_sold": 0, "ofertas_banco": 0, "candidatos": 0, "sem_financiamento": 0, "fora_cidade": 0,
+                 "fora_faixa": 0, "fora_tipo": 0} for b in bancos}
+    condicoes = {b: Counter() for b in bancos}
     ofertas, imoveis = [], []
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
@@ -209,12 +236,16 @@ def coletar(crit, hoje, cidades, diag):
             time.sleep(PAUSA)
         b.close()
     diag["sold_paginas"] = pag
-    cont["ofertas_sold"] = len(ofertas)
+    for c in conts.values():
+        c["ofertas_sold"] = len(ofertas)
     for o in ofertas:
-        if not eh_santander(o):
+        banco = banco_de(o)
+        if banco not in conts:
             continue
-        cont["santander"] += 1
-        d = montar(o, hoje)
+        cont = conts[banco]
+        cont["ofertas_banco"] += 1
+        d = montar(o, hoje, banco)
+        condicoes[banco][(d.get("financiamento_texto") or "(sem condição)")[:90]] += 1
         if norm(d["cidade"]) not in cidades.get(d["uf"] or "", set()):
             cont["fora_cidade"] += 1; continue
         valores = [v for v in (d["lance_minimo"], d.get("lance_2_leilao")) if v]
@@ -228,4 +259,7 @@ def coletar(crit, hoje, cidades, diag):
         if d["financiamento"] is False:
             cont["sem_financiamento"] += 1
         imoveis.append(d)
-    return imoveis, cont
+    for b, c in conts.items():
+        c[b.lower()] = c["ofertas_banco"]  # compatível com o importador (contagens.santander)
+        c["condicoes"] = dict(condicoes[b].most_common(8))
+    return imoveis, conts
