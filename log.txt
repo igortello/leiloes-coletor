@@ -1,0 +1,3 @@
+token True
+[{"start": 0, "lim": 50, "page": 1, "status": "200", "n": 100, "primeiro": ["40780", "40780", "41341"], "total": ["449"]}, {"start": 50, "lim": 50, "page": 2, "status": "200", "n": 100, "primeiro": ["42215", "42215", "42832"], "total": ["449"]}, {"start": 0, "lim": 500, "page": 1, "status": "200", "n": 898, "primeiro": ["40780", "40780", "41341"], "total": ["449"]}]
+[('Banco Santander', 207), ('Ita&#250; Unibanco', 190), ('CAPEF', 25), ('VIVO', 17), ('Tribunal de Justi&#231;a do Estado de S&#227;o Paulo', 10)]
