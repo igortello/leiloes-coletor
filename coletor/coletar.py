@@ -1,4 +1,4 @@
-"""Coletor do Portal de Leilões — imóveis Caixa e Santander/Inter na SOLD (SP/RJ).
+"""Coletor do Portal de Leilões — imóveis Caixa, Santander/Inter na SOLD e Santander/Inter na Frazão (SP/RJ).
 
 Baixa as listas oficiais da Caixa, aplica os critérios do portal, abre o
 anúncio de cada candidato e grava saida/resultado.json.
@@ -213,7 +213,7 @@ def detalhe_campos(t, hoje):
 LIMITE_S = float(os.environ.get("LIMITE_MIN", "33")) * 60
 PARALELO = int(os.environ.get("PARALELO", "3"))
 FALHAS = []
-FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa,santander,inter").split(",") if f.strip()}
+FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa,santander,inter,frazao").split(",") if f.strip()}
 FONTES_RES = {}
 
 
@@ -453,6 +453,20 @@ def main():
             for b in bancos_sold:
                 FONTES_RES[b.lower()] = {"ok": False, "erro": str(e)[:500]}
             print("SOLD falhou:", e, flush=True)
+    # Frazão Leilões (Inter e Santander; Itaú só contado em diagnóstico)
+    if "frazao" in FONTES:
+        try:
+            import frazao
+            novos, cf = frazao.coletar(crit, hoje, cidades, DIAG, ("Inter", "Santander"))
+            chave = lambda d: (d.get("banco"), norm(d.get("cidade")), re.sub(r"\D", "", str(d.get("matricula") or "")) or norm(d.get("endereco"))[:30])
+            ja = {chave(d) for d in imoveis if d.get("fonte") == "SOLD"}
+            dup = [d for d in novos if chave(d) in ja]
+            imoveis += [d for d in novos if chave(d) not in ja]
+            FONTES_RES["frazao"] = {"ok": True, "contagens": cf, "duplicados_sold": len(dup), "vendedores": DIAG.get("frazao_vendedores")}
+            print("Frazão:", json.dumps(cf, ensure_ascii=False), "duplicados com a SOLD:", len(dup), flush=True)
+        except Exception as e:  # noqa
+            FONTES_RES["frazao"] = {"ok": False, "erro": str(e)[:500]}
+            print("Frazão falhou:", e, flush=True)
     gravar(crit, hoje, cont, imoveis, cont["nao_lidos_por_tempo"] > 0)
     print(json.dumps(cont), flush=True)
     if "caixa" in FONTES and cont["anuncios_ok"] == 0 and cont["falhas"] >= 10:

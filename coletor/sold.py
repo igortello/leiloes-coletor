@@ -70,16 +70,24 @@ def banco_de(o):
 
 def classifica_pagamento(cond, banco):
     """(financiamento True/False/None, tipo). Tipos: "bancário" (financiamento do banco em até N meses,
-    como o Santander), "direto do banco" (Inter: sinal/entrada + 24 a 240 parcelas com o próprio banco)."""
+    como o Santander), "direto do banco" (Inter: sinal/entrada + 24 a 240 parcelas com o próprio banco).
+    Parcelamento curto (até 60 parcelas, ex.: sinal de 40% + 18x) não é financiamento."""
     c = norm(cond)
     if not c:
         return None, None
     if re.search(r"SEM FINANCIAMENTO|NAO (?:ACEITA|PERMITE|HA) FINANCIAMENTO|SOMENTE A VISTA|APENAS A VISTA", c):
         return False, None
-    if re.search(r"FINANCIA|PARCELA|SALDO EM ATE|\d+\s*X\b", c):
-        if banco == "Inter" or re.search(r"SINAL|ENTRADA DE \d", c):
+    meses = [int(x) for x in re.findall(r"(\d{2,3})\s*(?:X\b|PARCELAS|MESES|PRESTA)", c)]
+    meses += [int(x) for x in re.findall(r"(?:EM ATE|ATE|LIMITADA A|A)\s*(\d{2,3})\s*(?:\(|X|PARCELAS|MESES|SUCESSIVAS)", c)]
+    longo = max(meses) if meses else None
+    if re.search(r"FINANCIAMENTO|FINANCIADO", c):
+        if banco == "Inter" or re.search(r"SINAL|ENTRADA DE \d", c) and not re.search(r"FINANCIAMENTO (?:BANCARIO|EM ATE|DE ATE)", c):
             return True, "direto do banco"
         return True, "bancário"
+    if re.search(r"PARCELA|SALDO EM ATE|\d+\s*X\b", c):
+        if longo and longo >= 120:
+            return True, "direto do banco"
+        return False, None
     return (False, None) if "VISTA" in c else (None, None)
 
 
