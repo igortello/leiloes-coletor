@@ -75,6 +75,8 @@ def classifica_pagamento(cond, banco):
     c = norm(cond)
     if not c:
         return None, None
+    # regras de outros tipos de imóvel (ex.: "Terrenos pagamento somente à vista") não valem para apartamentos
+    c = "; ".join(x for x in re.split(r";|\n", c) if not re.search(r"\b(TERRENOS?|LOTES DE TERRENO|IMOVEIS RURAIS|GALPOES)\b", x)) or c
     if re.search(r"SEM FINANCIAMENTO|NAO (?:ACEITA|PERMITE|HA) FINANCIAMENTO|SOMENTE A VISTA|APENAS A VISTA", c):
         return False, None
     meses = [int(x) for x in re.findall(r"(\d{2,3})\s*(?:X\b|PARCELAS|MESES|PRESTA)", c)]
@@ -86,7 +88,7 @@ def classifica_pagamento(cond, banco):
         return True, "bancário"
     if re.search(r"PARCELA|SALDO EM ATE|\d+\s*X\b", c):
         if longo and longo >= 120:
-            return True, "direto do banco"
+            return True, ("bancário" if banco == "Santander" else "direto do banco")
         return False, None
     return (False, None) if "VISTA" in c else (None, None)
 
