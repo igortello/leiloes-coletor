@@ -203,12 +203,16 @@ def montar(o, hoje, banco="Santander"):
     if fin_tipo == "direto do banco":
         ctx = (cond or "") + "\n" + curto + "\n" + desc + "\n" + texto_html(a.get("fullDescription") or "")
         ent = achar(r"(?:entrada|sinal)(?: m[íi]nim[ao])?(?: de)?\s*(\d{1,2})\s*%", ctx)
-        juros = achar(r"(\d{1,2}[.,]\d{1,2})\s*%\s*(?:a\.?\s*a\.?|ao ano)", ctx)
+        juros = achar(r"juros de\s*(\d{1,2}(?:[.,]\s?\d{1,2})?)\s*%", ctx) or achar(r"(\d{1,2}(?:[.,]\s?\d{1,2})?)\s*%\s*(?:a\.?\s*a\b|ao ano)", ctx)
+        juros = re.sub(r"\s", "", juros) if juros else None
         al.append(f"Financiamento direto do {banco}" + (f": entrada mínima {ent}%" if ent else "")
                   + (f", juros {juros}% a.a." if juros else "") + (" + IPCA" if "IPCA" in norm(ctx) else "")
                   + " — confirmar no edital (percentual financiável e se vale para imóvel ocupado)")
         if ent:
             d["entrada_min_pct"] = int(ent) / 100
+        if juros:
+            d["juros_aa"] = round(float(juros.replace(",", ".")) / 100, 4)
+            d["juros_indice"] = "IPCA" if "IPCA" in norm(ctx) else None
     al.append("Comissão do leiloeiro: confirmar no edital")
     if v2: al.append("2º leilão" + (" em " + d2.strftime("%d/%m") if d2 else "") + ": R$ " + f"{v2:,.0f}".replace(",", "."))
     d["alertas"] = al
