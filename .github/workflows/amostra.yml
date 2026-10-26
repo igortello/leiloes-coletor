@@ -4,7 +4,12 @@ on:
     inputs:
       urls:
         description: "URLs separadas por espaço"
-        required: true
+        required: false
+        default: ""
+      script:
+        description: "Script em coletor/"
+        required: false
+        default: "amostra.py"
 permissions:
   contents: write
 jobs:
@@ -17,7 +22,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install playwright==1.47.0 && python -m playwright install --with-deps chromium
-      - run: python coletor/amostra.py
+      - run: python coletor/${{ inputs.script || 'amostra.py' }}
         env:
           URLS: ${{ inputs.urls }}
       - name: Publicar no ramo "amostras"
