@@ -225,6 +225,8 @@ def coletar(crit, hoje, cidades, diag, bancos=("Inter", "Santander")):
                 det = {}
                 diag.setdefault("frazao_falhas", []).append({"lote": c["id"], "erro": str(e)[:200]})
             d = montar(c, det, banco)
+            if det and not det.get("condicoes") and len(diag.setdefault("frazao_sem_condicao", [])) < 3:
+                diag["frazao_sem_condicao"].append({"lote": c["id"], "texto": det.get("texto", "")[:6000]})
             if not det:
                 d["alertas"].insert(0, "Anúncio não lido")
             if norm(d["cidade"]) not in cidades.get(d["uf"] or "", set()):
