@@ -76,6 +76,15 @@ def achar(pat, t, flags=re.I):
     return m.group(1).strip() if m else None
 
 
+def campo(t, rotulo):
+    """Formato "Rótulo:\nvalor" (lotes do Santander) ou "Rótulo: valor"."""
+    m = re.search(r"(?:^|\n)\s*" + rotulo + r"\s*:?\s*\n\s*([^\n]+)", t or "", re.I)
+    if m and not m.group(1).strip().endswith(":"):
+        return m.group(1).strip()
+    m = re.search(rotulo + r"\s*:\s*([^\n]+)", t or "", re.I)
+    return m.group(1).strip() if m else None
+
+
 def debitos(t):
     linhas = [l.strip() for l in (t or "").split("\n")]
     for i, l in enumerate(linhas):
@@ -97,20 +106,48 @@ def ler_detalhe(htm):
     ocup = "Ocupado" if re.search(r"Im[óo]vel Ocupado", tudo) else "Desocupado" if re.search(r"Im[óo]vel Desocupado", tudo) else None
     m_end = re.search(r'"name":"Endereço","value":"([^"]+?)(?:\s+Im[óo]vel (?:Des)?[Oo]cupado|\s+\d+ Visitas|")', htm)
     endereco = _html.unescape(m_end.group(1)).strip() if m_end else None
+    comp = campo(t, r"Composi[çc][ãa]o Interna/Vaga") or ""
+    vagas = achar(r"Vagas? de garagem:\s*(\d+)", comp) or achar(r"(\d+|uma|01|02)\s*vagas?", t)
+    acoes = re.findall(r"([^\n]*A[ÇC][ÃA]O JUDICIAL[^\n]*)", t, re.I)
     return {
         "texto": t, "condicoes": cond,
-        "avaliacao": num_br(achar(r"(?:Valor de )?[Aa]valia[çc][ãa]o(?: do im[óo]vel)?:?\s*R\$\s*([\d.,]+)", t)),
-        "matricula": achar(r"Matr[íi]cula(?:\(s\))?(?: n[ºo°.]*)?:?\s*([\d.\-/]+)", t),
-        "oficio": achar(r"Matr[íi]cula[^\n]*?\d\s+d[oa]\s+([^\n–]+?)\s*(?:–|-\s*CNM|$)", t, re.I | re.M),
+        "avaliacao": num_br((campo(t, r"Valor Avaliado") or achar(r"(?:Valor de )?[Aa]valia[çc][ãa]o(?: do im[óo]vel)?:?\s*R\$\s*([\d.,]+)", t) or "").replace("R$", "")),
+        "matricula": (achar(r"([\d.\-/]+)", campo(t, r"Matr[íi]cula") or "") or achar(r"Matr[íi]cula(?:\(s\))?(?: n[ºo°.]*)?:?\s*([\d.\-/]+)", t)),
+        "oficio": campo(t, r"Cart[óo]rio de Registro") or achar(r"Matr[íi]cula[^\n]*?\d\s+d[oa]\s+([^\n–]+?)\s*(?:–|-\s*CNM|$)", t, re.I | re.M),
         "debitos": debitos(t),
-        "ocupacao": ocup, "condicionado": bool(re.search(r"condicionad[oa] [àa] aprova[çc][ãa]o do vendedor", t + tudo, re.I)),
-        "codigo": achar(r"C[óo]digo do Im[óo]vel:?\s*([\w.\-]+)", t),
+        "ocupacao": (campo(t, r"Status da Ocupa[çc][ãa]o") or "").capitalize() or ocup,
+        "condicionado": bool(re.search(r"condicionad[oa] [àa] aprova[çc][ãa]o do vendedor", t + tudo, re.I)),
+        "codigo": achar(r"C[óo]digo do Im[óo]vel:?\s*([\w.\-]+)", t) or campo(t, r"Dossi[êe]"),
         "licitacao_id": lic.group(1) if lic else None, "licitacao": _html.unescape(lic.group(3)) if lic else None,
-        "endereco": endereco,
-        "area": num_br(achar(r"[ÁA]rea (?:privativa|[úu]til)[^:\n]*:\s*([\d.,]+)", t)),
-        "quartos": achar(r"(\d+)\s*(?:dormit[óo]rios?|quartos?)", t),
-        "vaga": achar(r"(\d+|uma|01|02)\s*vagas?", t) or (re.search(r"\bvaga", t, re.I) and "1"),
+        "licitacao_href": f"/leilao/{lic.group(1)}/{lic.group(2)}" if lic else None,
+        "endereco": campo(t, r"Endere[çc]o Completo") or endereco,
+        "area": num_br((campo(t, r"[ÁA]rea Privativa") or "").replace("m²", "")) or num_br(achar(r"[ÁA]rea (?:privativa|[úu]til)[^:\n]*:\s*([\d.,]+)", t))
+                or num_br(achar(r"([\d.,]+)\s*m² de [áa]rea constru[íi]da", t)),
+        "quartos": achar(r"Dormit[óo]rios:\s*(\d+)", comp) or achar(r"(\d+)\s*(?:dormit[óo]rios?|quartos?)", t),
+        "vaga": vagas,
+        "cond_mes": num_br((campo(t, r"Condom[íi]nio") or "").replace("R$", "")) if re.match(r"\s*R\$", campo(t, r"Condom[íi]nio") or "") else None,
+        "iptu_ano": num_br((campo(t, r"IPTU Anual") or "").replace("R$", "")),
+        "acoes": [a.strip()[:200] for a in acoes],
     }
+
+
+def condicao_leilao(pg, href, cache, diag):
+    """Forma de pagamento descrita na página do leilão (os lotes do Santander não a repetem)."""
+    if not href:
+        return None
+    if href not in cache:
+        txt = ""
+        try:
+            time.sleep(PAUSA)
+            pg.goto(BASE + href, wait_until="domcontentloaded", timeout=60000)
+            pg.wait_for_timeout(2500)
+            txt = pg.inner_text("body")
+        except Exception as e:  # noqa
+            diag.setdefault("frazao_falhas", []).append({"leilao": href, "erro": str(e)[:200]})
+        frases = [re.sub(r"\s+", " ", f).strip() for f in re.findall(r"[^\n.]*(?:financiamento|financiado|parcelad|parcelas|[àa] vista)[^\n.]*\.?", txt, re.I)]
+        cache[href] = "; ".join(dict.fromkeys(f for f in frases if 8 < len(f) < 300))[:400] or None
+        diag.setdefault("frazao_leiloes", {})[href] = {"condicao": cache[href], "inicio": txt[:1500]}
+    return cache[href]
 
 
 def montar(c, det, banco):
@@ -118,9 +155,12 @@ def montar(c, det, banco):
     p1 = pr[0] if pr else {}
     p2 = pr[1] if len(pr) > 1 else {}
     cond = det.get("condicoes")
+    cond_do_leilao = False
+    if not cond and det.get("condicao_leilao"):
+        cond, cond_do_leilao = det["condicao_leilao"], True
     fin, fin_tipo = classifica_pagamento(cond, banco)
     endereco = det.get("endereco") or c["endereco_curto"]
-    m = re.search(r",\s*([^,]+?),\s*([A-Z]{2})\s*$", endereco or "")
+    m = re.search(r",\s*([^,]+?),\s*([A-Z]{2})\s*(?:,\s*[\d.\-]{8,10})?\s*$", endereco or "")
     cidade, uf = (m.group(1).strip(), m.group(2)) if m else (c["cidade"], c["uf"])
     bairro = None
     if m:
@@ -133,7 +173,7 @@ def montar(c, det, banco):
         "uf": uf, "cidade": cidade, "bairro": bairro, "endereco": endereco, "empreendimento": None, "tipo": tipo,
         "area_privativa": det.get("area") or c["area"], "area_total": None,
         "quartos": int(det["quartos"]) if str(det.get("quartos") or "").isdigit() else None,
-        "vaga": ("sim" if vaga and str(vaga) not in ("0",) else None) if vaga else ("sim" if re.search(r"vaga", c["titulo"], re.I) else None),
+        "vaga": ("sim" if str(vaga) not in ("0",) else "não") if vaga else ("sim" if re.search(r"vaga", c["titulo"], re.I) else None),
         "lance_minimo": p1.get("valor"), "avaliacao": det.get("avaliacao"), "valor_alvo": None,
         "desconto_pct": round(1 - (p2.get("valor") or p1.get("valor")) / det["avaliacao"], 4) if det.get("avaliacao") and p1.get("valor") else None,
         "modalidade": f"Leilão {'em 2 praças ' if p2 else ''}(Frazão)", "descricao": c["titulo"],
@@ -146,6 +186,7 @@ def montar(c, det, banco):
         "regra_condominio": det.get("debitos"), "regra_tributos": det.get("debitos"), "averbacao_leiloes": None,
         "ocupacao": det.get("ocupacao"), "comissao_pct": None, "codigo_imovel": det.get("codigo"),
         "anexos": [], "link": BASE + c["href"],
+        "condominio_mensal": det.get("cond_mes"), "iptu_anual": det.get("iptu_ano"),
     }
     if p2.get("valor"):
         d["lance_1_leilao"] = p1.get("valor")
@@ -154,6 +195,8 @@ def montar(c, det, banco):
     elif d["ocupacao"] == "Ocupado": al.append("Ocupado")
     if d["vaga"] is None: al.append("Vaga não informada")
     if det.get("condicionado"): al.append("Lance condicionado à aprovação do vendedor")
+    if cond_do_leilao: al.append("Forma de pagamento lida na descrição do leilão, não no lote: confirmar no edital")
+    for a in det.get("acoes") or []: al.append(a)
     if fin_tipo == "direto do banco":
         ent = achar(r"(?:entrada|sinal)(?: m[íi]nim[ao])?(?: de)?\s*(\d{1,2})\s*%", cond)
         juros = achar(r"juros de\s*(\d{1,2}(?:[.,]\s?\d{1,2})?)\s*%", cond)
@@ -196,7 +239,7 @@ def coletar(crit, hoje, cidades, diag, bancos=("Inter", "Santander")):
         tok = pg.evaluate("() => (document.querySelector('input[name=__RequestVerificationToken]')||{}).value || ''")
         cartoes = ler_cartoes(buscar_txt(pg, BASE + BUSCA.format(tok=tok)))
         diag["frazao_lotes"] = len(cartoes)
-        cand = []
+        cand, cache_leilao = [], {}
         for c in cartoes:
             vendedores[c["vendedor"]] += 1
             banco = banco_de(c["vendedor"])
@@ -220,13 +263,13 @@ def coletar(crit, hoje, cidades, diag, bancos=("Inter", "Santander")):
                 pg.goto(BASE + c["href"], wait_until="domcontentloaded", timeout=60000)
                 pg.wait_for_timeout(1500)
                 det = ler_detalhe(pg.content())
+                if not det.get("condicoes"):
+                    det["condicao_leilao"] = condicao_leilao(pg, det.get("licitacao_href"), cache_leilao, diag)
             except Exception as e:  # noqa
                 ct["detalhe_falhou"] += 1
                 det = {}
                 diag.setdefault("frazao_falhas", []).append({"lote": c["id"], "erro": str(e)[:200]})
             d = montar(c, det, banco)
-            if det and not det.get("condicoes") and len(diag.setdefault("frazao_sem_condicao", [])) < 3:
-                diag["frazao_sem_condicao"].append({"lote": c["id"], "texto": det.get("texto", "")[:6000]})
             if not det:
                 d["alertas"].insert(0, "Anúncio não lido")
             if norm(d["cidade"]) not in cidades.get(d["uf"] or "", set()):

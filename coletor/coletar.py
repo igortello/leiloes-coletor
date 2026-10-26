@@ -462,7 +462,7 @@ def main():
             ja = {chave(d) for d in imoveis if d.get("fonte") == "SOLD"}
             dup = [d for d in novos if chave(d) in ja]
             imoveis += [d for d in novos if chave(d) not in ja]
-            FONTES_RES["frazao"] = {"ok": True, "contagens": cf, "duplicados_sold": len(dup), "vendedores": DIAG.get("frazao_vendedores"), "amostra_sem_condicao": DIAG.get("frazao_sem_condicao")}
+            FONTES_RES["frazao"] = {"ok": True, "contagens": cf, "duplicados_sold": len(dup), "vendedores": DIAG.get("frazao_vendedores"), "leiloes": DIAG.get("frazao_leiloes")}
             print("Frazão:", json.dumps(cf, ensure_ascii=False), "duplicados com a SOLD:", len(dup), flush=True)
         except Exception as e:  # noqa
             FONTES_RES["frazao"] = {"ok": False, "erro": str(e)[:500]}
