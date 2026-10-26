@@ -68,6 +68,21 @@ def banco_de(o):
     return None
 
 
+def classifica_pagamento(cond, banco):
+    """(financiamento True/False/None, tipo). Tipos: "bancário" (financiamento do banco em até N meses,
+    como o Santander), "direto do banco" (Inter: sinal/entrada + 24 a 240 parcelas com o próprio banco)."""
+    c = norm(cond)
+    if not c:
+        return None, None
+    if re.search(r"SEM FINANCIAMENTO|NAO (?:ACEITA|PERMITE|HA) FINANCIAMENTO|SOMENTE A VISTA|APENAS A VISTA", c):
+        return False, None
+    if re.search(r"FINANCIA|PARCELA|SALDO EM ATE|\d+\s*X\b", c):
+        if banco == "Inter" or re.search(r"SINAL|ENTRADA DE \d", c):
+            return True, "direto do banco"
+        return True, "bancário"
+    return (False, None) if "VISTA" in c else (None, None)
+
+
 def campos_template(p):
     out = {}
     for g in ((p.get("template") or {}).get("groups") or []):
@@ -131,7 +146,7 @@ def montar(o, hoje, banco="Santander"):
         tipo = "Apartamento"
     cond = tpl.get("condicoesdepagamento") or achar(r"FORMA DE PAGAMENTO:\s*([^\n]+)", desc) or achar(r"Condi[çc][õo]es de Pagamento\s*\n([^\n]+)", desc)
     lance = (o.get("offerDetail") or {}).get("initialBidValue") or o.get("price")
-    avaliacao = num_br(achar(r"Valor Avaliado:\s*R\$\s*([\d.,]+)", desc))
+    avaliacao = num_br(achar(r"Valor (?:Avaliado|de Avalia[çc][ãa]o):\s*R\$\s*([\d.,]+)", desc))
     alvo = num_br(achar(r"Valor Alvo:\s*R\$\s*([\d.,]+)", desc))
     v2 = d2 = h2 = None
     m2 = re.search(r"2[ªa]\s*Pra[çc]a:(.*?)Valor M[íi]nimo de Venda de R\$\s*([\d.,]+)", desc, re.I | re.S)
@@ -149,13 +164,12 @@ def montar(o, hoje, banco="Santander"):
     vagas = achar(r"Vagas?:\s*(\d+)", desc) or achar(r"(\d+)\s*vagas?", curto + " " + desc)
     deb = tpl.get("responsabilidadedopagamentodosdebitos")
     deb_txt = achar(r"(OS D[ÉE]BITOS[^\n.]*(?:\.|$))", desc) or (f"Débitos: {deb}" if deb else None)
-    area = tpl.get("areaprivativa") or tpl.get("areatotal") or num_br(achar(r"[ÁA]rea Privativa:\s*([\d.,]+)", desc))
-    fin = "FINANCIAMENTO" in norm(cond) if cond else None
-    if not cond:  # sem o campo: procura a regra no texto do lote/evento
-        txt = norm(desc + " " + texto_html((a.get("fullDescription") or "")))
-        if "FINANCIAMENTO" in txt:
-            cond = achar(r"([^\n]*financiamento[^\n]*)", desc + "\n" + texto_html(a.get("fullDescription") or ""))
-            fin = True if cond else None
+    area = (tpl.get("areaprivativa") or tpl.get("areatotal") or num_br(achar(r"[ÁA]rea Privativa:\s*([\d.,]+)", desc))
+            or num_br(achar(r"(\d+(?:[.,]\d+)?)\s*m(?:²|2)\b", curto)))
+    if not cond:  # sem o campo: procura a regra no texto do lote, no título ou no evento
+        ctx = desc + "\n" + curto + "\n" + texto_html(a.get("fullDescription") or "")
+        cond = (achar(r"([^\n]*financ[^\n]*)", ctx) or achar(r"([^\n|]*(?:entrada|sinal) de \d{1,2}\s*%[^\n|]*)", ctx))
+    fin, fin_tipo = classifica_pagamento(cond, banco)
     d = {
         "banco": banco, "fonte": "SOLD", "numero_bem": f"{PREFIXO[banco]}{o['id']}", "id_oferta": o["id"],
         "uf": uf, "cidade": cidade, "bairro": bairro, "endereco": endereco, "empreendimento": None,
@@ -165,7 +179,7 @@ def montar(o, hoje, banco="Santander"):
         "lance_minimo": lance, "avaliacao": avaliacao, "valor_alvo": alvo,
         "desconto_pct": round(1 - lance / avaliacao, 4) if lance and avaliacao else (round(float(tpl["desagio"]) / 100, 4) if tpl.get("desagio") else None),
         "modalidade": f"{a.get('desc') or 'Leilão'} (SOLD)", "descricao": curto,
-        "financiamento": fin, "financiamento_texto": cond, "financiamento_lista": None,
+        "financiamento": fin, "financiamento_tipo": fin_tipo, "financiamento_texto": cond, "financiamento_lista": None,
         "fgts": "FGTS" in norm(cond) or "FGTS" in norm(a.get("fullDescription")),
         "data_leilao": fim.date().isoformat() if fim else None, "hora_leilao": fim.strftime("%Hh%M") if fim else None,
         "lance_2_leilao": v2, "data_2_leilao": d2.isoformat() if d2 else None, "hora_2_leilao": h2, "licitacao": f"{a.get('desc')} — evento {a.get('id')}", "lote": str(o.get("lotNumber") or "") or None,
@@ -186,11 +200,11 @@ def montar(o, hoje, banco="Santander"):
     if re.search(r"direito de prefer[êe]ncia", desc, re.I): al.append("Direito de preferência do fiduciante")
     acao = achar(r"(Recai sobre o im[óo]vel[^\n]+)", desc)
     if acao: al.append(acao[:160])
-    if banco == "Inter" and fin:
-        ctx = desc + "\n" + texto_html(a.get("fullDescription") or "")
-        ent = achar(r"entrada (?:m[íi]nima )?de\s*(\d{1,2})\s*%", ctx)
+    if fin_tipo == "direto do banco":
+        ctx = (cond or "") + "\n" + curto + "\n" + desc + "\n" + texto_html(a.get("fullDescription") or "")
+        ent = achar(r"(?:entrada|sinal)(?: m[íi]nim[ao])?(?: de)?\s*(\d{1,2})\s*%", ctx)
         juros = achar(r"(\d{1,2}[.,]\d{1,2})\s*%\s*(?:a\.?\s*a\.?|ao ano)", ctx)
-        al.append("Financiamento direto do Inter" + (f": entrada mínima {ent}%" if ent else "")
+        al.append(f"Financiamento direto do {banco}" + (f": entrada mínima {ent}%" if ent else "")
                   + (f", juros {juros}% a.a." if juros else "") + (" + IPCA" if "IPCA" in norm(ctx) else "")
                   + " — confirmar no edital (percentual financiável e se vale para imóvel ocupado)")
         if ent:
@@ -245,7 +259,7 @@ def coletar(crit, hoje, cidades, diag, bancos=("Santander", "Inter")):
         cont = conts[banco]
         cont["ofertas_banco"] += 1
         d = montar(o, hoje, banco)
-        condicoes[banco][(d.get("financiamento_texto") or "(sem condição)")[:90]] += 1
+        condicoes[banco][(d.get("financiamento_texto") or "(sem condição)")[:300]] += 1
         if norm(d["cidade"]) not in cidades.get(d["uf"] or "", set()):
             cont["fora_cidade"] += 1; continue
         valores = [v for v in (d["lance_minimo"], d.get("lance_2_leilao")) if v]
