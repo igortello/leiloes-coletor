@@ -213,7 +213,7 @@ def detalhe_campos(t, hoje):
 LIMITE_S = float(os.environ.get("LIMITE_MIN", "33")) * 60
 PARALELO = int(os.environ.get("PARALELO", "3"))
 FALHAS = []
-FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa,santander,inter,frazao").split(",") if f.strip()}
+FONTES = {f.strip().lower() for f in os.environ.get("FONTES", "caixa").split(",") if f.strip()}
 FONTES_RES = {}
 
 

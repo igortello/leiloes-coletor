@@ -1,4 +1,4 @@
-name: Coleta Caixa, SOLD e Frazão
+name: Coleta Caixa
 on:
   workflow_dispatch:
     inputs:
@@ -7,9 +7,9 @@ on:
         required: false
         default: ""
       fontes:
-        description: "Fontes a coletar, separadas por vírgula (caixa, santander, inter, frazao)"
+        description: "Fontes a coletar, separadas por vírgula (caixa; opcionais desativadas: santander, inter, frazao)"
         required: false
-        default: "caixa,santander,inter,frazao"
+        default: "caixa"
 permissions:
   contents: write
 concurrency:
@@ -33,7 +33,7 @@ jobs:
         env:
           LIMITE_MIN: "35"
           CRITERIOS: ${{ inputs.criterios }}
-          FONTES: ${{ inputs.fontes || 'caixa,santander,inter,frazao' }}
+          FONTES: ${{ inputs.fontes || 'caixa' }}
         run: python coletor/coletar.py
       - name: Publicar resultado no ramo "resultados"
         if: always()
