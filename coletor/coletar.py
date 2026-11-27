@@ -250,7 +250,8 @@ def montar(l, det, hoje):
 
 CAMPOS_ANUNCIO = ("financiamento", "financiamento_texto", "fgts", "data_leilao", "hora_leilao", "licitacao", "lote", "leiloeiro",
                   "matricula", "oficio", "regra_condominio", "regra_tributos", "averbacao_leiloes", "ocupacao",
-                  "lance_1_leilao", "lance_2_leilao", "data_2_leilao", "hora_2_leilao")
+                  "lance_1_leilao", "lance_2_leilao", "data_2_leilao", "hora_2_leilao",
+                  "matricula_url", "edital_url", "outros_urls", "_links_lidos")
 
 
 def eh_leilao(l):
@@ -316,6 +317,8 @@ def ler_anuncio(html, hoje):
     if re.search(r"mais dispon[íi]vel para venda", t, re.I):
         raise Indisponivel("imóvel não está mais disponível para venda")
     det = detalhe_campos(t, hoje)
+    import documentos
+    det.update(documentos.links_documentos(html), _links_lidos=True)
     if not det["financiamento"] and not det["regra_condominio"] and not det["financiamento_texto"]:
         raise RuntimeError("anúncio vazio: ..." + t[-900:].replace("\n", " | "))
     return det
@@ -439,6 +442,18 @@ def main():
                     FALHAS.append({"numero": l["numero"], "tentativa": 2, "erro": str(e)[:700]})
                     imoveis.append(montar(l, None, hoje)); cont["falhas"] += 1
             cont["recuperados_2a_tentativa"] = recuperados
+            # matrícula e edital (ramo `documentos`, acumulativo); falha aqui não derruba a coleta
+            if os.environ.get("DOCUMENTOS", "1") != "0":
+                try:
+                    import documentos
+                    acervo = documentos.Acervo(os.environ.get("DOCS_DIR", "docs"))
+                    restante = max(60, LIMITE_S - (time.time() - t0))
+                    lim = min(float(os.environ.get("DOCS_LIMITE_MIN", "12")) * 60, restante)
+                    cont["documentos"] = documentos.coletar(nav, imoveis, acervo, DETALHE, lim, DIAG)
+                    print("Documentos:", json.dumps(cont["documentos"]), flush=True)
+                except Exception as e:  # noqa
+                    cont["documentos"] = {"erro": str(e)[:500]}
+                    print("Documentos falhou:", e, flush=True)
     # SOLD (Santander e Inter): falha aqui não derruba a coleta da Caixa; fica registrada em "fontes".
     bancos_sold = [b for b in ("Santander", "Inter") if b.lower() in FONTES]
     if bancos_sold:

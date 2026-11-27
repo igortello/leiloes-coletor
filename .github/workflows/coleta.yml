@@ -26,6 +26,13 @@ jobs:
           python-version: "3.12"
       - name: Recuperar coleta anterior (para reaproveitar anúncios já lidos)
         run: git fetch --depth 1 origin resultados && git show origin/resultados:resultado.json > anterior.json || echo "sem coleta anterior"
+      - name: Recuperar matrículas e editais já baixados (ramo "documentos")
+        run: |
+          if git ls-remote --exit-code --heads origin documentos >/dev/null; then
+            git clone -q --depth 1 --branch documentos "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" docs
+          else
+            mkdir -p docs && git -C docs init -q -b documentos
+          fi
       - name: Instalar navegador
         run: pip install playwright==1.47.0 && python -m playwright install --with-deps chromium
       - name: Coletar
@@ -34,7 +41,15 @@ jobs:
           LIMITE_MIN: "35"
           CRITERIOS: ${{ inputs.criterios }}
           FONTES: ${{ inputs.fontes || 'caixa' }}
+          DOCS_DIR: docs
         run: python coletor/coletar.py
+      - name: Publicar matrículas e editais no ramo "documentos"
+        if: always()
+        run: |
+          cd docs && git add -A
+          if git diff --cached --quiet; then echo "nenhum documento novo"; exit 0; fi
+          git -c user.name="coletor" -c user.email="coletor@users.noreply.github.com" commit -q -m "Documentos da execução ${{ github.run_id }}"
+          git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:documentos
       - name: Publicar resultado no ramo "resultados"
         if: always()
         env:
