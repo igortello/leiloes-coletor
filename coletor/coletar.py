@@ -447,8 +447,9 @@ def main():
                 try:
                     import documentos
                     acervo = documentos.Acervo(os.environ.get("DOCS_DIR", "docs"))
-                    restante = max(60, LIMITE_S - (time.time() - t0))
-                    lim = min(float(os.environ.get("DOCS_LIMITE_MIN", "12")) * 60, restante)
+                    # orçamento próprio: até DOCS_LIMITE_MIN, sem passar de LIMITE_MIN + 10 min no total
+                    folga = LIMITE_S + 600 - (time.time() - t0)
+                    lim = max(120, min(float(os.environ.get("DOCS_LIMITE_MIN", "10")) * 60, folga))
                     cont["documentos"] = documentos.coletar(nav, imoveis, acervo, DETALHE, lim, DIAG)
                     print("Documentos:", json.dumps(cont["documentos"]), flush=True)
                 except Exception as e:  # noqa

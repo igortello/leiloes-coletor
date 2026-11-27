@@ -18,14 +18,14 @@ concurrency:
 jobs:
   coletar:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 65
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Recuperar coleta anterior (para reaproveitar anúncios já lidos)
-        run: git fetch --depth 1 origin resultados && git show origin/resultados:resultado.json > anterior.json || echo "sem coleta anterior"
+        run: git fetch --depth 1 origin resultados && (git show origin/resultados:resultado.json > anterior.json || git show origin/resultados:resultado_preservado.json > anterior.json) || echo "sem coleta anterior"
       - name: Recuperar matrículas e editais já baixados (ramo "documentos")
         run: |
           if git ls-remote --exit-code --heads origin documentos >/dev/null; then
@@ -36,7 +36,7 @@ jobs:
       - name: Instalar navegador
         run: pip install playwright==1.47.0 && python -m playwright install --with-deps chromium
       - name: Coletar
-        timeout-minutes: 42
+        timeout-minutes: 52
         env:
           LIMITE_MIN: "35"
           CRITERIOS: ${{ inputs.criterios }}
@@ -56,6 +56,8 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p /tmp/pub && cp -r saida/. /tmp/pub/ 2>/dev/null || true
+          # execução que falhou antes de coletar: guarda a coleta anterior para a próxima reaproveitar os anúncios
+          if [ ! -f /tmp/pub/resultado.json ] && [ -s anterior.json ]; then cp anterior.json /tmp/pub/resultado_preservado.json; fi
           echo "{\"run_id\": \"$RUN_ID\", \"em\": \"$(date -u +%FT%TZ)\", \"ok\": $( [ -f saida/erro.json ] && echo false || echo true )}" > /tmp/pub/execucao.json
           cd /tmp/pub && git init -q -b resultados && git add -A
           git -c user.name="coletor" -c user.email="coletor@users.noreply.github.com" commit -q -m "Resultado da execução $RUN_ID"
